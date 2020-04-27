@@ -32,14 +32,15 @@ void printCommands(){
     printf("-------------------------------------------------------\n");
     printf("COMMANDS:\n");
     printf("List Directories: 'ls'\n");
-    printf("Change Directories: 'cd <directory name>' or 'cd ..'\n");
+    printf("List Tree: 'tree'\n");
+    printf("Change Directories: 'cd <directory path>' or 'cd ..'\n");
     printf("Display Working Directory: 'pwd'\n");
     printf("Create Directoty: 'mkdir <directory name>'\n");
-    printf("Add File: 'mkfile <file name> <file extension>'\n");
+    printf("Add File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
     printf("Remove File: 'rmfile <file name>\n");
-    printf("Copy File: 'cpyfile <original file name> <new file name>'\n");
-    printf("Move File: 'mvfile <file name> <directory location>'\n");
-    printf("Set Metadata: 'setdata <file name> <file permission>'\n");
+    printf("Copy File: 'cpyfile <file path> <destination directory path>'\n");
+    printf("Move File: 'cpyfile <file path> <destination directory path>'\n");
+    printf("Set File Permission Metadata: 'chmod <file path> <file permission>'\n");
     printf("Copy from the normal filesystem to this filesystem: 'TODO!'\n");
     printf("Copy from this filesystem to the normal filesystem: 'TODO'\n");
     printf("See Commands Again: 'commands' or 'c'\n");
@@ -265,21 +266,21 @@ void* getAllDirectoriesStructs(uint16_t blockSize) {
 
 void* getDirectoryEntryFromBlock(uint64_t directoryBlockNumber, uint16_t blockSize) {
     // Since we know the location of the directory, we just need to read a single block
-    struct directoryEntry *dirs = malloc(blockSize);
-    LBAread(dirs, 1, directoryBlockNumber);
+    struct directoryEntry *dir = malloc(blockSize);
+    LBAread(dir, 1, directoryBlockNumber);
     
     // Ensure that this is an actual valid directory
-    // A valid directory has a file extension string set to the global const DIRECTORY_EXTENSION_NAME
-    if (strcmp(dirs->fileExtension, DIRECTORY_EXTENSION_NAME) == 0) {
+    // A valid directory has a block that is not equal to 0
+    if (dir->blockLocation != 0) {
         // Return the pointer to the struct
         // * THE CALLER IS RESPONSIBLE FOR CALLING FREE() ON THIS STRUCT *
-        return dirs;
+        return dir;
     }
     
     // If it is not valid, throw an erroe
     else {
         // Cleanup
-        free (dirs);
+        free (dir);
         printf("ERROR AT getDirectoryEntryFromBlock(): TRIED TO ACCESS AN INVALID DIRECTORY BLOCK!\n");
         return NULL;
     }
@@ -288,11 +289,50 @@ void* getDirectoryEntryFromBlock(uint64_t directoryBlockNumber, uint16_t blockSi
 void listDirectories (uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
     printf("-------------------------------------------------------\n");
     printf("LISTING DIRECTORIES...\n");
-    listDirectoriesHelper(parentDirectoryBlockNumber, 0, blockSize);
+    listDirectoriesHelper(parentDirectoryBlockNumber, blockSize);
     printf("-------------------------------------------------------\n\n");
 }
 
-void listDirectoriesHelper (uint64_t parentDirectoryBlockNumber, int directoryLevel, uint16_t blockSize) {
+void listTree (uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
+    printf("-------------------------------------------------------\n");
+    printf("LISTING TREE...\n");
+    listTreeHelper(parentDirectoryBlockNumber, 0, blockSize);
+    printf("-------------------------------------------------------\n\n");
+}
+
+void listDirectoriesHelper(uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
+    // Since we know the location of the directory, we just need to read a single block
+    struct directoryEntry *dir = malloc(blockSize);
+    LBAread(dir, 1, parentDirectoryBlockNumber);
+    
+    // Print current directory name
+    printf("-%s\n", dir->name);
+    
+    // Go to every child and print it
+    for (int i = 0; dir->indexLocations[i]  != 0; i++) {
+        // Create a temp directory to read name from
+        struct directoryEntry *tempDir = malloc(blockSize);
+        tempDir = getDirectoryEntryFromBlock(dir->indexLocations[i], blockSize);
+        
+        // If the directory is a file, print the file name and extension
+        if (strcmp(tempDir->fileExtension, DIRECTORY_EXTENSION_NAME) == 0) {
+            printf("   - %s\n", tempDir->name);
+        }
+        // If the directory is an actual directory, simply print its name
+        else {
+            printf("   * %s.%s\n", tempDir->name, tempDir->fileExtension);
+        }
+        
+        // Cleanup temp directory
+        free(tempDir);
+    }
+    
+    // Cleanup
+    free(dir);
+    return;
+}
+
+void listTreeHelper(uint64_t parentDirectoryBlockNumber, int directoryLevel, uint16_t blockSize) {
     // Since we know the location of the directory, we just need to read a single block
     struct directoryEntry *dirs = malloc(blockSize);
     LBAread(dirs, 1, parentDirectoryBlockNumber);
@@ -300,11 +340,22 @@ void listDirectoriesHelper (uint64_t parentDirectoryBlockNumber, int directoryLe
     // In order to make it look like a tree, we need to print spaces for deeper directories
     // These spaces are a function of the level we start are on. For instance, the root is at level 0, so it have no spaces.
     for (int i = 0; i < directoryLevel; i++) {
-        printf("    ");
+        printf("   ");
     }
     
-    // Print the current directory
-    printf("-%s\n", dirs->name);
+    // If the directory is a file, print the file name and extension
+    if (strcmp(dirs->fileExtension, DIRECTORY_EXTENSION_NAME) == 0) {
+        printf("- %s\n", dirs->name);
+    }
+    // If the directory is an actual directory, simply print its name
+    else {
+        printf("* %s.%s\n", dirs->name, dirs->fileExtension);
+        
+        // We also do not want to print it's children, since it does not have any sub directories (its a file)
+        // Cleanup
+        free(dirs);
+        return;
+    }
     
     // We have to use recursion to print out the children, which in turn will print out its children
     // This will ensure that we keep the correct tree structure
@@ -313,10 +364,11 @@ void listDirectoriesHelper (uint64_t parentDirectoryBlockNumber, int directoryLe
         // Go to every child and print its children. Stop this process when you come across an empty child block
         for (int i = 0; dirs->indexLocations[i]  != 0; i++) {
             int childreLevel = (directoryLevel + 1);
-            listDirectoriesHelper(dirs->indexLocations[i], childreLevel, blockSize);
+            listTreeHelper(dirs->indexLocations[i], childreLevel, blockSize);
         }
     }
     
+    // Cleanup
     free(dirs);
 }
 
@@ -378,17 +430,17 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
     // Set variables for the root directory
     strcpy(tempDir->name, directoryName);
     strcpy(tempDir->fileExtension, DIRECTORY_EXTENSION_NAME);
-    tempDir->permissions = 755; // Default permission
+    tempDir->permissions = 755; // Default directory permission
     tempDir->dateCreated = (unsigned int)time(NULL);
     tempDir->dateModified = (unsigned int)time(NULL);
     tempDir->fileSize = 0;
     tempDir->parentDirectory = parentDirectoryBlockNumber;
     
     // Find open block to write this directory to
-    uint64_t freeBlock = findSingleFreeLBABlockInRange(51, 99, blockSize);
+    uint64_t dirBlockLocation = findSingleFreeLBABlockInRange(51, 99, blockSize);
     
     // Set this directory block location to the newly found free block
-    tempDir->blockLocation = freeBlock;
+    tempDir->blockLocation = dirBlockLocation;
     
     // Since the root has no files/children directories when created, set these pointers to 0
     memset(tempDir->indexLocations, 0x00, (sizeof(tempDir->indexLocations)/sizeof(tempDir->indexLocations[0])));
@@ -405,13 +457,13 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
     printf("-------------------------------------------------------\n\n");
     
     // Write to open block
-    LBAwrite(tempDir, 1, freeBlock);
+    LBAwrite(tempDir, 1, dirBlockLocation);
     
     // Update block to used
-    setBlockAsUsed(freeBlock, blockSize);
+    setBlockAsUsed(dirBlockLocation, blockSize);
     
     // Update parent node's 'fileIndexLocation' to point to this directory
-    addChildDirectoryIndexLocationToParent(parentDirectoryBlockNumber, freeBlock, blockSize);
+    addChildDirectoryIndexLocationToParent(parentDirectoryBlockNumber, dirBlockLocation, blockSize);
     
     // Since we created a directory, we must update the directory count
     increaseVCBDirectoryCount(blockSize);
@@ -419,7 +471,77 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
     // Cleanup
     free(tempDir);
     
-    return freeBlock;
+    // Return the block location of this new directory
+    return dirBlockLocation;
+}
+
+uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileSize, uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
+    // Create temp directory, which will be written to file system
+    struct directoryEntry *tempDir = malloc(blockSize);
+    
+    // Set variables for the root directory
+    strcpy(tempDir->name, fileName);
+    strcpy(tempDir->fileExtension, fileExtension);
+    tempDir->permissions = 644; // Default permission
+    tempDir->dateCreated = (unsigned int)time(NULL);
+    tempDir->dateModified = (unsigned int)time(NULL);
+    tempDir->fileSize = fileSize;
+    tempDir->parentDirectory = parentDirectoryBlockNumber;
+    
+    // Calculate number of blocks needed for this file
+    int numberOfBlocksNeeded = (int)((fileSize / blockSize) + 1);
+    
+    // Find open block to write this directory to
+    uint64_t dirBlockLocation = findSingleFreeLBABlockInRange(51, 99, blockSize);
+    
+    // Set this file directory block location to the newly found free block
+    tempDir->blockLocation = dirBlockLocation;
+    
+    // Create array to store free blocks. These blocks will be used to store the actual 'contents' of the file
+    // Make sure to look starting at block 100, since everything before that is used by the file system
+    uint64_t *freeBlocks = findFreeLBABlocksInRange(100, getHighestUseableBlock(blockSize), numberOfBlocksNeeded, blockSize);
+    
+    // Set the indexLocations to 0, so we know that this are has been wiped clean
+    memset(tempDir->indexLocations, 0x00, (sizeof(tempDir->indexLocations)/sizeof(tempDir->indexLocations[0])));
+    
+    // Assign the block we set aside to these index locations
+    // Also set all the index blocks that this file will need to used
+    for (int i = 0; i < numberOfBlocksNeeded; i++) {
+        tempDir->indexLocations[i] = freeBlocks[i];
+        setBlockAsUsed(freeBlocks[i], blockSize);
+    }
+    
+    // Print info
+    printf("-------------------------------------------------------\n");
+    printf("CREATING NEW FILE...\n");
+    printf("File Name: %s\n", tempDir->name);
+    printf("File Extension: %s\n", tempDir->fileExtension);
+    printf("File Size: %llu bytes\n", tempDir->fileSize);
+    printf("File Permissions: %hu\n", tempDir->permissions);
+    printf("File Creation Date: %u\n", tempDir->dateCreated);
+    printf("Number of Blocks Reserved for File: %d\n", numberOfBlocksNeeded);
+    printf("Directory Location: %llu\n", tempDir->blockLocation);
+    printf("Parent Directory location: %llu\n", tempDir->parentDirectory);
+    printf("-------------------------------------------------------\n\n");
+    
+    // Write this file directory to dirBlockLocation
+    LBAwrite(tempDir, 1, dirBlockLocation);
+    
+    // Update file directory block to used
+    setBlockAsUsed(dirBlockLocation, blockSize);
+    
+    // Update parent node's 'fileIndexLocation' to point to this directory
+    addChildDirectoryIndexLocationToParent(parentDirectoryBlockNumber, dirBlockLocation, blockSize);
+    
+    // Since we created a directory, we must update the directory count
+    increaseVCBDirectoryCount(blockSize);
+    
+    // Cleanup
+    free(tempDir);
+    free(freeBlocks);
+    
+    // Return the block location of this new file directory
+    return dirBlockLocation;
 }
 
 void createRootDirectory(uint16_t blockSize) {
@@ -493,7 +615,7 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize) {
     free(vcb);
 }
 
-void changeDirectory(char* directoryPath, uint16_t blockSize) {
+void changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize) {
     // Print Header
     printf("-------------------------------------------------------\n");
     printf("CHANGING DIRECTORIES...\n");
@@ -516,9 +638,9 @@ void changeDirectory(char* directoryPath, uint16_t blockSize) {
     }
     
     for (int i = 0 ; i < argc; i++) {
-        int changeStatus = changeDirectoryHelper(directoryList[i], blockSize);
+        int changeStatus = changeDirectoryHelper(directoryList[i], elevated, blockSize);
         
-        // If there was an error, this path is not valid. We want to reset back to the starting directory
+        // If return was -1, this path is not valid. We want to reset back to the starting directory
         if (changeStatus == -1) {
             setVCBCurrentDirectory(originalDirectory, blockSize);
             
@@ -527,13 +649,23 @@ void changeDirectory(char* directoryPath, uint16_t blockSize) {
             printf("-------------------------------------------------------\n\n");
             return;
         }
+        // If return was -2, there was an attempt to cd into a file, without an elevated call. We want to reset back to the starting directory
+        if (changeStatus == -2) {
+            setVCBCurrentDirectory(originalDirectory, blockSize);
+            
+            // Print error, and exit the function
+            printf("Cannot Change Directory to File!\n");
+            printf("-------------------------------------------------------\n\n");
+            return;
+        }
+        
     }
     
     printf("Changed Directory Successfully.\n");
     printf("-------------------------------------------------------\n\n");
 }
 
-int changeDirectoryHelper(char* directoryName, uint16_t blockSize) {
+int changeDirectoryHelper(char* directoryName, uint16_t elevated, uint16_t blockSize) {
     // Get block of the current directory
     uint64_t currentDirectory = getVCBCurrentDirectory(blockSize);
     
@@ -580,6 +712,16 @@ int changeDirectoryHelper(char* directoryName, uint16_t blockSize) {
             
             // If we find the name that matches, then change the current directory to that directorie's block, and break out of loop
             if (strcmp(childDir->name, directoryName) == 0) {
+                // If we are trying to cd into a file AND this call has not been elevated, return -2 since cd'in into a file is not allowed unless the call has been elevated
+                if ((strcmp(childDir->fileExtension, DIRECTORY_EXTENSION_NAME) !=0) && elevated == 0) {
+                    // Cleanup
+                    free (childDir);
+                    free (dir);
+                    
+                    // Return -2, which means failed attempt to cd into a file without an elevated call
+                    return -2;
+                }
+                
                 // Set new directory to the correct child
                 setVCBCurrentDirectory(childBlock, blockSize);
                 
@@ -592,6 +734,7 @@ int changeDirectoryHelper(char* directoryName, uint16_t blockSize) {
             }
         }
         // If we iterated through all the children and did not find a match, then we cannot change directories since it does not exist
+        // Return -1, which means directory not found
         return -1;
     }
 }
@@ -606,6 +749,9 @@ void displayCurrentDirectory(uint16_t blockSize) {
     printf("-------------------------------------------------------\n");
     printf("CURRENT DIRECTORY: %s\n", dir->name);
     printf("-------------------------------------------------------\n\n");
+    
+    // Cleanup
+    free(dir);
 }
 
 
@@ -725,7 +871,7 @@ void* findFreeLBABlocksInRange(uint64_t startIndex, uint64_t endIndex, int numBl
     LBAread(fsi, 49, 1);
     
     // Pointer to array of free blocks
-    uint64_t *blocks = malloc(numBlocksNeeded * sizeof(int));
+    uint64_t *blocks = malloc(numBlocksNeeded * sizeof(uint64_t));
     
     // Set number of blocks found to 0
     int numBlocksFound = 0;
@@ -832,14 +978,32 @@ int addChildDirectoryIndexLocationToParent(uint64_t parentDirectoryBlockNumber, 
 }
 
 void sampleCreateDirectories(int16_t blockSize) {
-    // Create DUMMY DATA for testing (adding, printing, removing, etc...)
+    // Get root directory as a base point for all our files
     uint64_t rootDirectory = getVCBRootDirectory(blockSize);
-    createDirectory("Pictures", rootDirectory, blockSize);
-    uint64_t documentEntryLocation = createDirectory("Documents", rootDirectory, blockSize);
-    createDirectory("Identifications", documentEntryLocation, blockSize);
-    createDirectory("LegalPaperwork", documentEntryLocation, blockSize);
+    
+    // Create pictures directoy
+    uint64_t picturesLocation = createDirectory("Pictures", rootDirectory, blockSize);
+        // Create sub pictures directories
+        uint64_t hawaiiLocation = createDirectory("Hawaii", picturesLocation, blockSize);
+            // Create sub hawaii files
+            createFileDirectory("familyPic", "png", 3234, hawaiiLocation, blockSize);
+            createFileDirectory("sunset", "png", 6777, hawaiiLocation, blockSize);
+            createFileDirectory("oncean", "jpg", 993, hawaiiLocation, blockSize);
+        createDirectory("NewYears2019", picturesLocation, blockSize);
+    
+    // Create documents directory
+    uint64_t documentsLocation = createDirectory("Documents", rootDirectory, blockSize);
+        // Create sub document directories
+        uint64_t identificationLocation = createDirectory("Identifications", documentsLocation, blockSize);
+            // Create sub identification files
+            createFileDirectory("socialSecurityCard", "pdf", 5352, identificationLocation, blockSize);
+            createFileDirectory("driversLicense", "png", 5352, identificationLocation, blockSize);
+        createDirectory("LegalPaperwork", documentsLocation, blockSize);
+    
+    // Create videos directory
     uint64_t videosLocation = createDirectory("Videos", rootDirectory, blockSize);
-    createDirectory("Animations", videosLocation, blockSize);
+        // Create sub videos directories
+        createDirectory("Animations", videosLocation, blockSize);
 }
 
 void exitFileSystem(int16_t blockSize) {
