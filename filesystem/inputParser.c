@@ -39,6 +39,9 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
     else if (strcmp(argv[0],"pwd") == 0) {
         displayCurrentDirectory(blockSize);
     }
+    else if (strcmp(argv[0],"info") == 0) {
+        printDirectoryInfo(argv[1], blockSize);
+    }
     else if (strcmp(argv[0],"mkdir") == 0) {
         createDirectory(argv[1], getVCBCurrentDirectory(blockSize), blockSize);
     }
@@ -52,6 +55,22 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
             }
         }
         createFileDirectory(argv[1], argv[2], atoi(argv[3]), getVCBCurrentDirectory(blockSize), blockSize);
+    }
+    else if (strcmp(argv[0],"chmod") == 0) {
+        // Make sure that the permission argument is a number
+        for (int i = 0; i < strlen(argv[2]) ; i++) {
+            // Check if the ASCII value is between 48 and 57, which corresponds to 0-9
+            if (argv[2][i] < 48 || argv[2][i] > 57) {
+                printf("Invalid Argument. Permission Must Be a Number.\n\n");
+                return;
+            }
+        }
+        // Make sure that permission is a valid range
+        if (((atoi(argv[2]) < 0) || (atoi(argv[2]) > 999))) {
+            printf("Invalid Argument. Permission Not Valid (Must 1-999).\n\n");
+            return;
+        }
+        setMetaData(argv[1], atoi(argv[2]), blockSize);
     }
     else if (strcmp(argv[0],"exit") == 0 || strcmp(argv[0],"e") == 0 || strcmp(argv[0],"Exit") == 0 || strcmp(argv[0],"E") == 0) {
         exitFileSystem(blockSize);
@@ -68,6 +87,7 @@ int userInputIsValid (int argc, char *argv[]) {
         "tree",
         "cd",
         "pwd",
+        "info",
         "mkdir",
         "mkfile",
         "rmfile",
@@ -92,6 +112,7 @@ int userInputIsValid (int argc, char *argv[]) {
         0,  // tree
         1,  // cd
         0,  // pwd
+        1,  // info
         1,  // mkdir
         3,  // mkfile
         1,  // rmdile

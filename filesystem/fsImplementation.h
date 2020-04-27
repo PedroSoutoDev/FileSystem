@@ -88,6 +88,10 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
 // Move file
 
 // Set metadata
+void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSize);
+
+// Print metadata
+void printDirectoryInfo(char* directoryPath, uint16_t blockSize);
 
 // Copy from the normal filesystem to your filesystem
 
@@ -109,17 +113,18 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize);
 // Use this function to change the current directory
 // Can pass in a path followning the LINUX syntax (ex: "../Documents/Identification")
 // elevated will either be 0 or 1. 0 mean not elevated, which means you CANNOT cd into a file. 1 means elevated, which means you CAN cd into a file
-void changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize);
+// Returns 1 if change was successfull, -1 is there directory does not exist, and -2 if there was an attemp to cd into a file
+int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize);
 
 // * DO NOT CALL THIS *
 // This function is called by change directory. This function expects a SINGLE child to change to. changeDirectory() is the one to call, which will parse the path and call this function as needed to change directories
 // Returns 1 if change was successfull, -1 is there directory does not exist, and -2 if there was an attemp to cd into a file
 int changeDirectoryHelper(char* directoryName, uint16_t elevated, uint16_t blockSize);
 
-// Increase the number of directoies in the VCB by 1
+// Increase the number of directories counter by 1
 void increaseVCBDirectoryCount(uint16_t blockSize);
 
-// Decrease the number of directoies in the VCB by 1
+// Decrease the number of directories counter by 1
 void decreaseVCBDirectoryCount(uint16_t blockSize);
 
 // Returns the number of directories of the file system

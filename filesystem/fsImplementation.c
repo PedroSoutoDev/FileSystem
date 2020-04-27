@@ -35,6 +35,7 @@ void printCommands(){
     printf("List Tree: 'tree'\n");
     printf("Change Directories: 'cd <directory path>' or 'cd ..'\n");
     printf("Display Working Directory: 'pwd'\n");
+    printf("Display Directory Information: 'info <directory path>'\n");
     printf("Create Directoty: 'mkdir <directory name>'\n");
     printf("Add File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
     printf("Remove File: 'rmfile <file name>\n");
@@ -372,6 +373,100 @@ void listTreeHelper(uint64_t parentDirectoryBlockNumber, int directoryLevel, uin
     free(dirs);
 }
 
+void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSize) {
+    // Print info
+    printf("-------------------------------------------------------\n");
+    printf("Changing Metadata...\n");
+    
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
+    
+    // Change directory, so that we can have direct access to change permission
+    int changeStatus = changeDirectory(directoryPath, 1, blockSize);
+    
+    // If return was -1, this path is not valid. We want to reset back to the starting directory
+    if (changeStatus == -1) {
+        // If there was an error, return to the orignal directory user was at
+        setVCBCurrentDirectory(originalDirectory, blockSize);
+        
+        // Print error, and exit the function
+        printf("No metadata change. Directory Not Found!\n");
+        printf("-------------------------------------------------------\n\n");
+        return;
+    }
+    
+    // Get the directory
+    struct directoryEntry *dir = malloc(blockSize);
+    LBAread(dir, 1, getVCBCurrentDirectory(blockSize));
+    
+    // Set permission
+    dir->permissions = newPermissions;
+    
+    // Update modified date to now
+    dir->dateModified =  (unsigned int)time(NULL);
+    
+    printf("Metadata changed. Permission set to %d\n",  newPermissions);
+    printf("-------------------------------------------------------\n\n");
+    
+    // Write back directory to file system
+    LBAwrite(dir, 1, getVCBCurrentDirectory(blockSize));
+    
+    // Return to the orignal directory user was at
+    setVCBCurrentDirectory(originalDirectory, blockSize);
+
+    // Cleanup
+    free(dir);
+}
+
+void printDirectoryInfo(char* directoryPath, uint16_t blockSize) {
+    // Print info
+    printf("-------------------------------------------------------\n");
+    printf("Printing Directory Information...\n");
+    
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
+    
+    // Change directory, so that we can have direct access to change permission
+    int changeStatus = changeDirectory(directoryPath, 1, blockSize);
+    
+    // If return was -1, this path is not valid. We want to reset back to the starting directory
+    if (changeStatus == -1) {
+        // If there was an error, return to the orignal directory user was at
+        setVCBCurrentDirectory(originalDirectory, blockSize);
+        
+        // Print error, and exit the function
+        printf("Directory Not Found!\n");
+        printf("-------------------------------------------------------\n\n");
+        return;
+    }
+    
+    // Get the directory
+    struct directoryEntry *dir = malloc(blockSize);
+    LBAread(dir, 1, getVCBCurrentDirectory(blockSize));
+    
+    // Print info
+    if (strcmp(dir->fileExtension, DIRECTORY_EXTENSION_NAME) == 0) {
+        printf("Directory Name: %s\n", dir->name);
+        printf("Directory Permissions: %hu\n", dir->permissions);
+        printf("Directory Creation Date: %u\n", dir->dateCreated);
+        printf("Directory Modification Date: %u\n", dir->dateModified);
+    } else {
+        printf("File Name: %s.%s\n", dir->name, dir->fileExtension);
+        printf("File Size: %llu\n", dir->fileSize);
+        printf("File Permissions: %hu\n", dir->permissions);
+        printf("File Creation Date: %u\n", dir->dateCreated);
+        printf("File Modification Date: %u\n", dir->dateModified);
+    }
+    
+    printf("Data Printed Successfully.\n");
+    printf("-------------------------------------------------------\n\n");
+
+    
+    // Return to the orignal directory user was at
+    setVCBCurrentDirectory(originalDirectory, blockSize);
+
+    // Cleanup
+    free(dir);
+}
+
 uint64_t createDirectoryOLD(uint16_t blockSize) {
     // Print Info
     printf("-------------------------------------------------------\n");
@@ -615,12 +710,7 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize) {
     free(vcb);
 }
 
-void changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize) {
-    // Print Header
-    printf("-------------------------------------------------------\n");
-    printf("CHANGING DIRECTORIES...\n");
-    printf("Attempting to change directory to: %s\n", directoryPath);
-    
+int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize) {
     // Save the current directory, in case there is an error changing directories when we call the helper
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
     
@@ -640,29 +730,19 @@ void changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize)
     for (int i = 0 ; i < argc; i++) {
         int changeStatus = changeDirectoryHelper(directoryList[i], elevated, blockSize);
         
-        // If return was -1, this path is not valid. We want to reset back to the starting directory
+        // If changeStatus was -1, this path is not valid. We want to reset back to the starting directory
         if (changeStatus == -1) {
             setVCBCurrentDirectory(originalDirectory, blockSize);
-            
-            // Print error, and exit the function
-            printf("Directory Not Found!\n");
-            printf("-------------------------------------------------------\n\n");
-            return;
+            return -1;
         }
-        // If return was -2, there was an attempt to cd into a file, without an elevated call. We want to reset back to the starting directory
+        // If changeStatus was -2, there was an attempt to cd into a file, without an elevated call. We want to reset back to the starting directory
         if (changeStatus == -2) {
             setVCBCurrentDirectory(originalDirectory, blockSize);
-            
-            // Print error, and exit the function
-            printf("Cannot Change Directory to File!\n");
-            printf("-------------------------------------------------------\n\n");
-            return;
+            return -2;
         }
         
     }
-    
-    printf("Changed Directory Successfully.\n");
-    printf("-------------------------------------------------------\n\n");
+    return 1;
 }
 
 int changeDirectoryHelper(char* directoryName, uint16_t elevated, uint16_t blockSize) {
