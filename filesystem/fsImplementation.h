@@ -41,11 +41,20 @@ void* getDirectoryEntryFromBlock(uint64_t directoryBlockNumber, uint16_t blockSi
 
 // * DO NOT CALL THIS *
 // This is a helper functions, and should not be called directly. Use listDirectories() to list directories!
-void listDirectoriesHelper(uint64_t parentDirectoryBlockNumber, int directoryLevel, uint16_t blockSize);
+void listDirectoriesHelper(uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
+
+// This will print the sub directories of the given parent
+// It takes in a parentDirectoryBlockNumber, which is the block of the directory you want to list FROM.
+void listDirectories(uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
+
+// * DO NOT CALL THIS *
+// This is a helper functions, and should not be called directly. Use listTree() to list directories in a tree format!
+void listTreeHelper(uint64_t parentDirectoryBlockNumber, int directoryLevel, uint16_t blockSize);
 
 // This will RECURSIVELY print directories. This ensure it will have a tree like format, which can be human readable
 // It takes in a parentDirectoryBlockNumber, which is the block of the directory you want to list FROM.
-void listDirectories(uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
+// Always call this function with directoryLevel = 0
+void listTree(uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
 
 // Prints the name of the current directory, used for pwd command
 void displayCurrentDirectory(uint16_t blockSize);
@@ -70,6 +79,7 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
 void createRootDirectory(uint16_t blockSize);
 
 // Add file
+uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileSize, uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
 
 // Remove file
 
@@ -98,12 +108,13 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize);
 
 // Use this function to change the current directory
 // Can pass in a path followning the LINUX syntax (ex: "../Documents/Identification")
-void changeDirectory(char* directoryPath, uint16_t blockSize);
+// elevated will either be 0 or 1. 0 mean not elevated, which means you CANNOT cd into a file. 1 means elevated, which means you CAN cd into a file
+void changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize);
 
 // * DO NOT CALL THIS *
 // This function is called by change directory. This function expects a SINGLE child to change to. changeDirectory() is the one to call, which will parse the path and call this function as needed to change directories
-// Returns 1 if change was successfull, and -1 is there was an error
-int changeDirectoryHelper(char* directoryName, uint16_t blockSize);
+// Returns 1 if change was successfull, -1 is there directory does not exist, and -2 if there was an attemp to cd into a file
+int changeDirectoryHelper(char* directoryName, uint16_t elevated, uint16_t blockSize);
 
 // Increase the number of directoies in the VCB by 1
 void increaseVCBDirectoryCount(uint16_t blockSize);
@@ -152,7 +163,7 @@ void setBlockAsUsed(uint64_t blockNumber, int16_t blockSize);
 // Returns the highest useable block in the LBA. Block may be USED or NOT USED
 uint64_t getHighestUseableBlock(int16_t blockSize);
 
-// Create DUMMY DIRECTORIES for testing
+// Create DUMMY DATA for testing (adding, printing, removing, etc...)
 void sampleCreateDirectories(int16_t blockSize);
 
 // Properly closes and exits the file system
