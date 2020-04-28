@@ -710,6 +710,21 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize) {
     free(vcb);
 }
 
+void cdCommand(char* directoryPath, uint16_t blockSize) {
+    // Print info
+    printf("-------------------------------------------------------\n");
+    printf("CHANGING DIRECTORIES...\n");
+    
+    int changeStatus = changeDirectory(directoryPath, 0, blockSize);
+    
+    if (changeStatus == 1) {
+        printf("Changed Directories Successfully.\n");
+    } else {
+        printf("Error Changing Directories. Directory does not exist.\n");
+    }
+    printf("-------------------------------------------------------\n\n");
+}
+
 int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize) {
     // Save the current directory, in case there is an error changing directories when we call the helper
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
@@ -1115,7 +1130,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     int returnStat = changeDirectory(srcFilePath, admin, blockSize);
     if(returnStat < 0)
     {
-        printf("Source path directory not valid\n\n");
+        printf("Source Path Not Valid.\n\n");
         return -1;
     }
     uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
@@ -1127,7 +1142,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     returnStat = changeDirectory(tarFilePath, 0, blockSize);
     if(returnStat < 0)
     {
-        printf("Target path directory not valid\n\n");
+        printf("Target Path Not Valid.\n\n");
         free(srcFile);
         return -1;
     }
@@ -1203,7 +1218,7 @@ int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
   int returnStat =  changeDirectory(srcPath, 1, blockSize);
     if(returnStat < 0)
     {
-        printf("Source path directory not valid\n\n");
+        printf("Source Path Not Valid.\n\n");
         return -1;
     }
     uint64_t srcPathBlock = getVCBCurrentDirectory(blockSize);
@@ -1214,7 +1229,7 @@ int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
     returnStat = changeDirectory(tarPath, 0, blockSize);
     if(returnStat < 0)
     {
-        printf("Source path directory not valid\n\n");
+        printf("Target Path Not Valid.\n\n");
         free(src);
         return -1;
     }
