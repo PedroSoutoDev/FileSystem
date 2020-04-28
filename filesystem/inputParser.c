@@ -56,8 +56,8 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         }
         createFileDirectory(argv[1], argv[2], atoi(argv[3]), getVCBCurrentDirectory(blockSize), blockSize);
     }
-    else if(strcmp(argv[0],"mkfile") == 0) {
-        removeFile(argv[1], blockSize)
+    else if(strcmp(argv[0],"rmfile") == 0) {
+        removeFile(argv[1], blockSize);
     }
     else if (strcmp(argv[0],"cpyfile") == 0) {
         copyFile(argv[1], argv[2], blockSize);
