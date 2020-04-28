@@ -639,34 +639,34 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     return dirBlockLocation;
 }
 int removeFile(char * filePath, uint16_t blockSize){
-    uint16_t admin = 1; // to have access to change into a directory
-
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
 
-    // get info on the file path
-    int returnStat = changeDirectory(filePath, admin, blockSize);
+    // Get info on the file path
+    int returnStat = changeDirectory(filePath, 1, blockSize);
     if(returnStat < 0)
     {
-        printf("File path directory not valid\n\n");
+        printf("File Path Not Valid\n\n");
         return -1;
     }
     uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
     struct directoryEntry *srcFile = getDirectoryEntryFromBlock(srcFileBlock, blockSize); //get info from srcEntry
 
-
-    setVCBCurrentDirectory(originalDirectory, blockSize); // back to original directory
+    // Jump back to original directory
+    setVCBCurrentDirectory(originalDirectory, blockSize);
 
     // Update block to Free
     setBlockAsFree(srcFileBlock, blockSize);
 
-    //remove file from directory
+    // Remove file from directory
     removeChildFromParent(srcFile->parentDirectory, srcFile->blockLocation, blockSize);
 
     // Cleanup
     free(srcFile);
 
-return 0;
+    // Return 1 on success
+    return 1;
 }
+
 void createRootDirectory(uint16_t blockSize) {
     // Create temp directory, which will be written to file system
     struct directoryEntry *tempRootDir = malloc(blockSize);
