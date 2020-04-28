@@ -37,10 +37,11 @@ void printCommands(){
     printf("Display Working Directory: 'pwd'\n");
     printf("Display Directory Information: 'info <directory path>'\n");
     printf("Create Directoty: 'mkdir <directory name>'\n");
-    printf("Add File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
+    printf("Make File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
     printf("Remove File: 'rmfile <file name>\n");
     printf("Copy File: 'cpyfile <file path> <destination directory path>'\n");
-    printf("Move File: 'cpyfile <file path> <destination directory path>'\n");
+    printf("Move File: 'mvfile <file path> <destination directory path>'\n");
+    printf("Move Directory: 'mvdir <file path> <destination directory path>'\n");
     printf("Set File Permission Metadata: 'chmod <file path> <file permission>'\n");
     printf("Copy from the normal filesystem to this filesystem: 'TODO!'\n");
     printf("Copy from this filesystem to the normal filesystem: 'TODO'\n");
@@ -741,6 +742,11 @@ int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize) 
         argc++;
         token = strtok(NULL, "/");
     }
+    
+    // If the last argument is a file, the user might enter FILENAME.EXTENSION (for instance: Pictures/Hawaii/sunset.jpg)
+    // Since the extension is not part of the directory name, we want to make sure to chop off anything after the '.'
+    token = strtok(directoryList[argc - 1], ".");
+    directoryList[argc - 1] = token;
     
     for (int i = 0 ; i < argc; i++) {
         int changeStatus = changeDirectoryHelper(directoryList[i], elevated, blockSize);

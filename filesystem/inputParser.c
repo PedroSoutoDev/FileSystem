@@ -68,7 +68,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
     else if (strcmp(argv[0],"cpyfile") == 0) {
         copyFile(argv[1], argv[2], blockSize);
     }
-    else if (strcmp(argv[0],"mvdir") == 0) {
+    else if (strcmp(argv[0],"mvdir") == 0 || strcmp(argv[0],"mvfile")) {
         moveDirectory(argv[1], argv[2], blockSize);
     }
     else if (strcmp(argv[0],"chmod") == 0) {
@@ -131,9 +131,10 @@ int userInputIsValid (int argc, char *argv[]) {
         1,  // info
         1,  // mkdir
         3,  // mkfile
-        1,  // rmdile
+        1,  // rmfile
         2,  // cpyfile
         2,  // mvfile
+        2,  // mvdir
         2,  // setdata
         99, // TODO: Copy from the normal filesystem to this filesystem
         99, // TODO: Copy from this filesystem to the normal filesystem
