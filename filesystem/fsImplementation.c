@@ -1104,3 +1104,176 @@ void exitFileSystem(int16_t blockSize) {
     // Exit
     exit (0);
 }
+
+uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
+{
+    uint16_t admin = 1; // to have access to change into a directory
+    
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
+    
+    // get info on the source
+    int returnStat = changeDirectory(srcFilePath, admin, blockSize);
+    if(returnStat < 0)
+    {
+        printf("path directory not vaild\n");
+        return -1;
+    }
+    uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
+    struct directoryEntry *srcFile = getDirectoryEntryFromBlock(srcFileBlock, blockSize); //get info from srcEntry
+    
+    setVCBCurrentDirectory(originalDirectory, blockSize); // back to original directory
+    
+    //get info on the target
+    returnStat = changeDirectory(tarFilePath, admin, blockSize);
+    if(returnStat < 0)
+    {
+        printf("path directory not vaild\n");
+        free(srcFile);
+        return -1;
+    }
+    uint64_t tarFileBlock = getVCBCurrentDirectory(blockSize);
+    struct directoryEntry *tarFile = getDirectoryEntryFromBlock(tarFileBlock, blockSize); //get info from target
+    
+    // Create temp file, which will be written to file system
+    struct directoryEntry *tempFile = malloc(blockSize);
+    
+    // Set variables for the root directory
+    strcpy(tempFile->name, srcFile->name);
+    strcpy(tempFile->fileExtension, srcFile->fileExtension);
+    tempFile->permissions = srcFile->permissions; // Default directory permission
+    tempFile->dateCreated = (unsigned int)time(NULL);
+    tempFile->dateModified = (unsigned int)time(NULL);
+    tempFile->fileSize = srcFile->fileSize;
+    tempFile->parentDirectory = tarFile->blockLocation;
+    
+    // Find open block to write this directory to
+    uint64_t dirBlockLocation = findSingleFreeLBABlockInRange(51, 99, blockSize);
+    
+    // Set this directory block location to the newly found free block
+    tempFile->blockLocation = dirBlockLocation;
+    
+    // Since the root has no files/children directories when created, set these pointers to 0
+    memset(tempFile->indexLocations, 0x00, (sizeof(tempFile->indexLocations)/sizeof(tempFile->indexLocations[0])));
+    int count = 0;
+    
+    for(int i = 0; srcFile->indexLocations[i] != 0; i++)
+    {
+        count++;
+    }
+    
+    for(int i = 0; i < count; i++)
+    {
+        
+        uint64_t fileblockindex = findSingleFreeLBABlockInRange(100,getHighestUseableBlock(blockSize), blockSize);
+        tempFile->indexLocations[i] = fileblockindex;
+        void *data = malloc(blockSize);
+        LBAread(data, 1, srcFile->indexLocations[i]);
+        LBAwrite(data, 1, fileblockindex);
+        setBlockAsUsed(fileblockindex, blockSize);
+        free(data);
+        
+    }
+    // Write to open block
+    LBAwrite(tempFile, 1, dirBlockLocation);
+    
+    // Update block to used
+    setBlockAsUsed(dirBlockLocation, blockSize);
+    
+    // Update parent node's 'fileIndexLocation' to point to this directory
+    addChildDirectoryIndexLocationToParent(tarFile->parentDirectory, dirBlockLocation, blockSize);
+    
+    // Since we created a directory, we must update the directory count
+    increaseVCBDirectoryCount(blockSize);
+    
+    setVCBCurrentDirectory(originalDirectory, blockSize);
+    // Cleanup
+    
+    free(tempFile);
+    free(tarFile);
+    free(srcFile);
+    
+    // Return the block location of this new directory
+    return dirBlockLocation;
+}
+
+void moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
+{
+    uint16_t admin = 0; // to have access to change into a directory
+    
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
+    
+    changeDirectory(srcPath, admin, blockSize);
+    uint64_t srcPathBlock = getVCBCurrentDirectory(blockSize);
+    struct directoryEntry *src = getDirectoryEntryFromBlock(srcPathBlock, blockSize); //get info from srcEntry
+    
+    printf("src Name: %s\n", src->name);
+    printf("src Block: %llu\n", src->blockLocation);
+    printf("src Parent: %llu\n", src->parentDirectory);
+    
+    setVCBCurrentDirectory(originalDirectory, blockSize); // back to original directory
+    
+    changeDirectory(tarPath, admin, blockSize);
+    uint64_t tarPathBlock = getVCBCurrentDirectory(blockSize);
+    struct directoryEntry *tar = getDirectoryEntryFromBlock(tarPathBlock, blockSize); //get info from target
+    
+    printf("tar Name: %s\n", tar->name);
+    printf("tar Block: %llu\n", tar->blockLocation);
+    printf("tar Parent: %llu\n", tar->parentDirectory);
+    
+    src->parentDirectory = tar->blockLocation ;
+    
+    LBAwrite(src, 1, src->blockLocation);
+    
+    printf("src Name: %s\n", src->name);
+    printf("src Block: %llu\n", src->blockLocation);
+    printf("src Parent: %llu\n", src->parentDirectory);
+    
+    
+    moveDirectoryHelper(src->parentDirectory, src->blockLocation, blockSize);
+    
+    setVCBCurrentDirectory(originalDirectory, blockSize);
+    
+    free(src);
+    free(tar);
+    
+    return;
+}
+
+uint64_t moveDirectoryHelper(uint64_t parentDirectoryBlockNumber, uint64_t childBlockNumber, uint16_t blockSize)
+{
+    int temp = 0;
+    
+    struct directoryEntry *tempDir = malloc(blockSize);
+    LBAread(tempDir, 1, parentDirectoryBlockNumber);
+
+    for(int i = 0; i < (sizeof(tempDir->indexLocations) / sizeof(tempDir->indexLocations[0])); i++)
+    {
+        printf("Root Index: %llu\n",tempDir->indexLocations[i]);
+        
+        // If the current slot we are checking is empty, update it
+        if (tempDir->indexLocations[i] == childBlockNumber)
+        {
+            temp = i;
+        }
+        if (tempDir->indexLocations[i] == 0)
+        {
+            
+            // Update it
+            tempDir->indexLocations[temp] = tempDir->indexLocations[i-1];
+            tempDir->indexLocations[i-1] = 0;
+            
+            // Write directory back into file system
+            LBAwrite(tempDir, 1, parentDirectoryBlockNumber);
+            
+            // Cleanup
+            free (tempDir);
+            
+            // Return success
+            return 1;
+        }
+    }
+    free(tempDir);
+    
+    // Return failure
+    return 0;
+}

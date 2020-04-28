@@ -56,6 +56,12 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         }
         createFileDirectory(argv[1], argv[2], atoi(argv[3]), getVCBCurrentDirectory(blockSize), blockSize);
     }
+    else if (strcmp(argv[0],"cpyfile") == 0) {
+        copyFile(argv[1], argv[2], blockSize);
+    }
+    else if (strcmp(argv[0],"mvdir") == 0) {
+        moveDirectory(argv[1], argv[2], blockSize);
+    }
     else if (strcmp(argv[0],"chmod") == 0) {
         // Make sure that the permission argument is a number
         for (int i = 0; i < strlen(argv[2]) ; i++) {
@@ -93,6 +99,7 @@ int userInputIsValid (int argc, char *argv[]) {
         "rmfile",
         "cpyfile",
         "mvfile",
+        "mvdir",
         "chmod",
         "TODO: Copy from the normal filesystem to this filesystem",
         "TODO: Copy from this filesystem to the normal filesystem",

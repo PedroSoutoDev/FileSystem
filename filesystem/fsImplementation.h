@@ -173,3 +173,9 @@ void sampleCreateDirectories(int16_t blockSize);
 
 // Properly closes and exits the file system
 void exitFileSystem(int16_t blockSize);
+
+uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize);
+
+void moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize);
+
+uint64_t moveDirectoryHelper(uint64_t parentDirectoryBlockNumber, uint64_t childBlockNumber, uint16_t blockSize);

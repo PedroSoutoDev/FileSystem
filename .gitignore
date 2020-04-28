@@ -1,5 +1,6 @@
 .DS_Store
 
 filesystem.xcodeproj
+FILE1/*
 
 test.txt
