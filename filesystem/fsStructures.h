@@ -3,8 +3,8 @@
 * Group Name: Last Minute
 * Name: Pedro Souto
 * Student ID: 918412864
-* Name:
-* Student ID:
+* Name: Aaron Schlichting
+* Student ID: 917930213
 * Name:
 * Student ID:
 * Name:
