@@ -3,8 +3,8 @@
 * Group Name: Last Minute
 * Name: Pedro Souto
 * Student ID: 918412864
-* Name:
-* Student ID:
+* Name: Cassie Sherman
+* Student ID: 918192878
 * Name:
 * Student ID:
 * Name:
