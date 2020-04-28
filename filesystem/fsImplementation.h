@@ -176,6 +176,6 @@ void exitFileSystem(int16_t blockSize);
 
 uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize);
 
-void moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize);
+int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize);
 
-uint64_t moveDirectoryHelper(uint64_t parentDirectoryBlockNumber, uint64_t childBlockNumber, uint16_t blockSize);
+uint64_t removeChildFromParent(uint64_t parentDirectoryBlockNumber, uint64_t childBlockNumber, uint16_t blockSize);
