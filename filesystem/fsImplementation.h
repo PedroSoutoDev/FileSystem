@@ -3,8 +3,8 @@
 * Group Name: Last Minute
 * Name: Pedro Souto
 * Student ID: 918412864
-* Name:
-* Student ID:
+* Name: Cassie Sherman
+* Student ID: 918192878
 * Name:
 * Student ID:
 * Name:
@@ -82,6 +82,7 @@ void createRootDirectory(uint16_t blockSize);
 uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileSize, uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
 
 // Remove file
+int removeFile(char * filePath, uint16_t blockSize);
 
 // Copy file
 
@@ -161,6 +162,9 @@ void* findFreeLBABlocksInRange(uint64_t startIndex, uint64_t endIndex, int numBl
 // Finds a single free blocks in a given range. This is used when you want ONLY ONE blocks
 // Returns a single int to the free block
 uint64_t findSingleFreeLBABlockInRange(uint64_t startIndex, uint64_t endIndex, int16_t blockSize);
+
+// Set a single block as free. This is used when you want to set ONLY ONE block to free
+void setBlockAsFree(uint64_t blockNumber, int16_t blockSize);
 
 // Set a single block as used. This is used when you want to set ONLY ONE block to used
 void setBlockAsUsed(uint64_t blockNumber, int16_t blockSize);

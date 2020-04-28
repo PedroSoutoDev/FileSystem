@@ -638,7 +638,35 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     // Return the block location of this new file directory
     return dirBlockLocation;
 }
+int removeFile(char * filePath, uint16_t blockSize){
+    uint16_t admin = 1; // to have access to change into a directory
 
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
+
+    // get info on the file path
+    int returnStat = changeDirectory(filePath, admin, blockSize);
+    if(returnStat < 0)
+    {
+        printf("File path directory not valid\n\n");
+        return -1;
+    }
+    uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
+    struct directoryEntry *srcFile = getDirectoryEntryFromBlock(srcFileBlock, blockSize); //get info from srcEntry
+
+
+    setVCBCurrentDirectory(originalDirectory, blockSize); // back to original directory
+
+    // Update block to Free
+    setBlockAsFree(srcFileBlock, blockSize);
+
+    //remove file from directory
+    removeChildFromParent(srcFile->parentDirectory, srcFile->blockLocation, blockSize);
+
+    // Cleanup
+    free(srcFile);
+
+return 0;
+}
 void createRootDirectory(uint16_t blockSize) {
     // Create temp directory, which will be written to file system
     struct directoryEntry *tempRootDir = malloc(blockSize);
@@ -996,7 +1024,20 @@ uint64_t findSingleFreeLBABlockInRange(uint64_t startIndex, uint64_t endIndex, i
     free(fsi);
     return 0;
 }
+void setBlockAsFree(uint64_t blockNumber, int16_t blockSize){
+     // Get FSI struct
+    struct freeSpaceInformation *fsi = malloc(49 * blockSize);
+    LBAread(fsi, 49, 1);
 
+    // Free the bit ->1 (Free)
+    setBit(fsi->freeBlockBitArray, blockNumber);
+
+    // Write back to LBA
+    LBAwrite(fsi, 49, 1);
+
+    //Cleanup
+    free(fsi);
+}
 void setBlockAsUsed(uint64_t blockNumber, int16_t blockSize) {
     // Get FSI struct
     struct freeSpaceInformation *fsi = malloc(49 * blockSize);
