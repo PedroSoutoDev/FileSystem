@@ -117,6 +117,10 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize);
 int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize);
 
 // * DO NOT CALL THIS *
+// Basic functions to change directories. Should only be called by command, since it is not able to CD into a file
+void cdCommand(char* directoryPath, uint16_t blockSize);
+
+// * DO NOT CALL THIS *
 // This function is called by change directory. This function expects a SINGLE child to change to. changeDirectory() is the one to call, which will parse the path and call this function as needed to change directories
 // Returns 1 if change was successfull, -1 is there directory does not exist, and -2 if there was an attemp to cd into a file
 int changeDirectoryHelper(char* directoryName, uint16_t elevated, uint16_t blockSize);
