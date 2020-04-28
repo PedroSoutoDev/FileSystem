@@ -1115,7 +1115,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     int returnStat = changeDirectory(srcFilePath, admin, blockSize);
     if(returnStat < 0)
     {
-        printf("path directory not vaild\n");
+        printf("Source path directory not valid\n\n");
         return -1;
     }
     uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
@@ -1124,10 +1124,10 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     setVCBCurrentDirectory(originalDirectory, blockSize); // back to original directory
     
     //get info on the target
-    returnStat = changeDirectory(tarFilePath, admin, blockSize);
+    returnStat = changeDirectory(tarFilePath, 0, blockSize);
     if(returnStat < 0)
     {
-        printf("path directory not vaild\n");
+        printf("Target path directory not valid\n\n");
         free(srcFile);
         return -1;
     }
@@ -1196,50 +1196,48 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     return dirBlockLocation;
 }
 
-void moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
+int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
 {
-    uint16_t admin = 0; // to have access to change into a directory
-    
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
     
-    changeDirectory(srcPath, admin, blockSize);
+  int returnStat =  changeDirectory(srcPath, 1, blockSize);
+    if(returnStat < 0)
+    {
+        printf("Source path directory not valid\n\n");
+        return -1;
+    }
     uint64_t srcPathBlock = getVCBCurrentDirectory(blockSize);
     struct directoryEntry *src = getDirectoryEntryFromBlock(srcPathBlock, blockSize); //get info from srcEntry
     
-    printf("src Name: %s\n", src->name);
-    printf("src Block: %llu\n", src->blockLocation);
-    printf("src Parent: %llu\n", src->parentDirectory);
-    
     setVCBCurrentDirectory(originalDirectory, blockSize); // back to original directory
     
-    changeDirectory(tarPath, admin, blockSize);
+    returnStat = changeDirectory(tarPath, 0, blockSize);
+    if(returnStat < 0)
+    {
+        printf("Source path directory not valid\n\n");
+        free(src);
+        return -1;
+    }
+    
     uint64_t tarPathBlock = getVCBCurrentDirectory(blockSize);
     struct directoryEntry *tar = getDirectoryEntryFromBlock(tarPathBlock, blockSize); //get info from target
     
-    printf("tar Name: %s\n", tar->name);
-    printf("tar Block: %llu\n", tar->blockLocation);
-    printf("tar Parent: %llu\n", tar->parentDirectory);
+    removeChildFromParent(src->parentDirectory, src->blockLocation, blockSize);
     
-    src->parentDirectory = tar->blockLocation ;
+    src->parentDirectory = tar->blockLocation;
+    addChildDirectoryIndexLocationToParent(tar->blockLocation, src->blockLocation, blockSize);
     
     LBAwrite(src, 1, src->blockLocation);
-    
-    printf("src Name: %s\n", src->name);
-    printf("src Block: %llu\n", src->blockLocation);
-    printf("src Parent: %llu\n", src->parentDirectory);
-    
-    
-    moveDirectoryHelper(src->parentDirectory, src->blockLocation, blockSize);
     
     setVCBCurrentDirectory(originalDirectory, blockSize);
     
     free(src);
     free(tar);
     
-    return;
+    return 0;
 }
 
-uint64_t moveDirectoryHelper(uint64_t parentDirectoryBlockNumber, uint64_t childBlockNumber, uint16_t blockSize)
+uint64_t removeChildFromParent(uint64_t parentDirectoryBlockNumber, uint64_t childBlockNumber, uint16_t blockSize)
 {
     int temp = 0;
     
@@ -1248,8 +1246,6 @@ uint64_t moveDirectoryHelper(uint64_t parentDirectoryBlockNumber, uint64_t child
 
     for(int i = 0; i < (sizeof(tempDir->indexLocations) / sizeof(tempDir->indexLocations[0])); i++)
     {
-        printf("Root Index: %llu\n",tempDir->indexLocations[i]);
-        
         // If the current slot we are checking is empty, update it
         if (tempDir->indexLocations[i] == childBlockNumber)
         {
