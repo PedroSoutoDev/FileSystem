@@ -43,10 +43,9 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         printDirectoryInfo(argv[1], blockSize);
     }
     else if (strcmp(argv[0],"mkdir") == 0) {
-        // Make sure that a directory name does not contain improper characters
+        // Make sure that directory name does not contain improper characters
         for (int i = 0; i < strlen(argv[1]) ; i++) {
             // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
-            // If statement reads as: (number) OR (lowercase letter) OR (uppercase letter)
             if (! ((argv[1][i] >= 48 && argv[1][i] <= 57) || (argv[1][i] >= 65 && argv[1][i] <= 90) || (argv[1][i] >= 97 && argv[1][i] <= 122)) ) {
                 printf("Invalid Directory Name. Directory May Only Contain Letters/Numbers.\n\n");
                 return;
@@ -55,6 +54,23 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         createDirectory(argv[1], getVCBCurrentDirectory(blockSize), blockSize);
     }
     else if (strcmp(argv[0],"mkfile") == 0) {
+        // Make sure that file name does not contain improper characters
+        for (int i = 0; i < strlen(argv[1]) ; i++) {
+            // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
+            if (! ((argv[1][i] >= 48 && argv[1][i] <= 57) || (argv[1][i] >= 65 && argv[1][i] <= 90) || (argv[1][i] >= 97 && argv[1][i] <= 122)) ) {
+                printf("Invalid File Name. File May Only Contain Letters/Numbers.\n\n");
+                return;
+            }
+        }
+        // Make sure that a file extension does not contain improper characters
+        for (int i = 0; i < strlen(argv[2]) ; i++) {
+            // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
+            // If statement reads as: (number) OR (lowercase letter) OR (uppercase letter)
+            if (! ((argv[2][i] >= 48 && argv[2][i] <= 57) || (argv[2][i] >= 65 && argv[2][i] <= 90) || (argv[2][i] >= 97 && argv[2][i] <= 122)) ) {
+                printf("Invalid File Extension. File Extension May Only Contain Letters/Numbers.\n\n");
+                return;
+            }
+        }
         // Make sure that the file size argument is a number
         for (int i = 0; i < strlen(argv[3]) ; i++) {
             // Check if the ASCII value is between 48 and 57, which corresponds to 0-9
