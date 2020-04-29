@@ -649,6 +649,49 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     return dirBlockLocation;
 }
 
+int removeFile(char * filePath, uint16_t blockSize){
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
+
+    // Attempt to move to the file directory
+    int returnStat = changeDirectory(filePath, 1, blockSize);
+    
+    // If the path does not exist, report it and exit function
+    if(returnStat < 0)
+    {
+        printf("File Path Not Valid\n\n");
+        return -1;
+    }
+    
+    // Get block of file directory
+    uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
+    
+    // Get actual file directory entry from block location
+    struct directoryEntry *srcFile = getDirectoryEntryFromBlock(srcFileBlock, blockSize);
+
+    // Jump back to original directory
+    setVCBCurrentDirectory(originalDirectory, blockSize);
+    
+    // Iterate through all blocks that create this file, and set them as free
+    for (int i = 0; srcFile->indexLocations[i]  != 0; i++) {
+        setBlockAsFree(srcFile->indexLocations[i], blockSize);
+    }
+
+    // Update actual file directory block to free
+    setBlockAsFree(srcFileBlock, blockSize);
+
+    // Remove file reference from its parent
+    removeChildFromParent(srcFile->parentDirectory, srcFile->blockLocation, blockSize);
+
+    // Cleanup
+    free(srcFile);
+    
+    // Print spacer for next command
+    printf("\n");
+
+    // Return 1 on success
+    return 1;
+}
+
 void createRootDirectory(uint16_t blockSize) {
     // Create temp directory, which will be written to file system
     struct directoryEntry *tempRootDir = malloc(blockSize);
@@ -1026,7 +1069,20 @@ uint64_t findSingleFreeLBABlockInRange(uint64_t startIndex, uint64_t endIndex, i
     free(fsi);
     return 0;
 }
+void setBlockAsFree(uint64_t blockNumber, int16_t blockSize){
+     // Get FSI struct
+    struct freeSpaceInformation *fsi = malloc(49 * blockSize);
+    LBAread(fsi, 49, 1);
 
+    // Free the bit ->1 (Free)
+    setBit(fsi->freeBlockBitArray, blockNumber);
+
+    // Write back to LBA
+    LBAwrite(fsi, 49, 1);
+
+    //Cleanup
+    free(fsi);
+}
 void setBlockAsUsed(uint64_t blockNumber, int16_t blockSize) {
     // Get FSI struct
     struct freeSpaceInformation *fsi = malloc(49 * blockSize);
