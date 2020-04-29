@@ -29,26 +29,51 @@
 #include "fsImplementation.h"
 
 void printCommands(){
-    printf("-------------------------------------------------------\n");
-    printf("COMMANDS:\n");
-    printf("List Directories: 'ls'\n");
-    printf("List Tree: 'tree'\n");
-    printf("Change Directories: 'cd <directory path>' or 'cd ..'\n");
-    printf("Display Working Directory: 'pwd'\n");
-    printf("Display Directory Information: 'info <directory path>'\n");
-    printf("Create Directoty: 'mkdir <directory name>'\n");
-    printf("Make File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
-    printf("Remove File: 'rmfile <file name>\n");
-    printf("Copy File: 'cpyfile <file path> <destination directory path>'\n");
-    printf("Move File: 'mvfile <file path> <destination directory path>'\n");
-    printf("Move Directory: 'mvdir <file path> <destination directory path>'\n");
-    printf("Set File Permission Metadata: 'chmod <file path> <file permission>'\n");
-    printf("Copy from the normal filesystem to this filesystem: 'TODO!'\n");
-    printf("Copy from this filesystem to the normal filesystem: 'TODO'\n");
-    printf("See Commands Again: 'commands' or 'c'\n");
-    printf("Exit: 'exit' or 'e'\n");
-    printf("-------------------------------------------------------\n\n");
+    printf("-------------------------------------------------------------------------------\n");
+    printf("%-30s","List Directories:"); printf("'ls'\n");
+    printf("%-30s","Display Tree:"); printf("'tree'\n");
+    printf("%-30s","Change Directories:"); printf("'cd <directory path>' or 'cd ..'\n");
+    printf("%-30s","Display Working Directory:"); printf("'pwd'\n");
+    printf("%-30s","Display Directory Info:"); printf("'info <directory path>'\n");
+    printf("%-30s","Create Directoty:"); printf("'mkdir <directory name>'\n");
+    printf("%-30s","Move Directory:"); printf("'mvdir <file path> <destination directory path>'\n");
+    printf("\n");
+    printf("%-30s","Create File:"); printf("'mkfile <file name> <file extension> <file size>'\n");
+    printf("%-30s","Remove File:"); printf("'rmfile <file name>\n");
+    printf("%-30s","Copy File:"); printf("'cpyfile <file path> <destination directory path>'\n");
+    printf("%-30s","Move File:"); printf("'mvfile <file path> <destination directory path>'\n");
+    printf("%-30s","Set File Permission:"); printf("'chmod <file path> <file permission>'\n");
+    printf("\n");
+    printf("%-30s","Copy From Linux Filesystem:"); printf("'TODO~'\n");
+    printf("%-30s","Copy From This Filesystem:"); printf("'TODO~'\n");
+    printf("\n");
+    printf("%-30s","See Commands Again:"); printf("'commands' or 'c'\n");
+    printf("%-30s","Clear Console:"); printf("'clear'\n");
+    printf("%-30s","Exit:"); printf("'exit' or 'e'\n");
+    printf("-------------------------------------------------------------------------------\n\n");
 }
+
+//void printCommandsOLD(){
+//    printf("-------------------------------------------------------\n");
+//    printf("List Directories: 'ls'\n");
+//    printf("List Tree: 'tree'\n");
+//    printf("Change Directories: 'cd <directory path>' or 'cd ..'\n");
+//    printf("Display Working Directory: 'pwd'\n");
+//    printf("Display Directory Information: 'info <directory path>'\n");
+//    printf("Create Directoty: 'mkdir <directory name>'\n");
+//    printf("Make File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
+//    printf("Remove File: 'rmfile <file name>\n");
+//    printf("Copy File: 'cpyfile <file path> <destination directory path>'\n");
+//    printf("Move File: 'mvfile <file path> <destination directory path>'\n");
+//    printf("Move Directory: 'mvdir <file path> <destination directory path>'\n");
+//    printf("Set File Permission: 'chmod <file path> <file permission>'\n");
+//    printf("Copy From Linux Filesystem: 'TODO!'\n");
+//    printf("Copy From This Filesystem: 'TODO'\n");
+//    printf("See Commands Again: 'commands' or 'c'\n");
+//    printf("Clear Console: 'clear'\n");
+//    printf("Exit: 'exit' or 'e'\n");
+//    printf("-------------------------------------------------------\n\n");
+//}
 
 void initializeVolumeControlBlock(uint64_t volumeSize, char *volumeName, uint16_t blockSize) {
     // Allocate memory for struct
@@ -69,7 +94,7 @@ void initializeVolumeControlBlock(uint64_t volumeSize, char *volumeName, uint16_
     vcb->volumeID = ID;
     
     // Print information about the newly created VCB
-    printf("-------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------\n");
     printf("CREATING VOLUME CONTROL BLOCK...\n");
     printf("Volume Name: %s\n", vcb->volumeName);
     printf("Volume ID: %u\n", vcb->volumeID);
@@ -79,8 +104,8 @@ void initializeVolumeControlBlock(uint64_t volumeSize, char *volumeName, uint16_
     printf("Number of LBA Blocks: %llu\n", vcb->numberOfBlocks);
     printf("Root Directory Block: %llu\n", vcb->rootDirectory);
     printf("VOLUME CONTROL BLOCK CREATED SUCCESSFULLY!\n");
-    printf("-------------------------------------------------------\n\n");
-    
+    printf("-------------------------------------------------------------------------------\n\n");
+
     // Write VCB to LBA block 0
     LBAwrite(vcb, 1, 0);
     
@@ -110,7 +135,7 @@ int hasVolumeControlBlock(uint16_t blockSize) {
         return 0;
     } else {
         // Since the VCB does exist, print information about it
-        printf("-------------------------------------------------------\n");
+        printf("-------------------------------------------------------------------------------\n");
         printf("VOLUME CONTROL BLOCK ALREADY CREATED.\n");
         printf("Volume Name: %s\n", vcb->volumeName);
         printf("Volume ID: %u\n", vcb->volumeID);
@@ -119,17 +144,16 @@ int hasVolumeControlBlock(uint16_t blockSize) {
         printf("Volume LBA Block Size: %llu\n", vcb->blockSize);
         printf("Number of LBA Blocks: %llu\n", vcb->numberOfBlocks);
         printf("Root Directory Block: %llu\n", vcb->rootDirectory);
-        printf("-------------------------------------------------------\n\n");
-        
+        printf("-------------------------------------------------------------------------------\n");
+
         // Since the FSI exists as well, print information about it
         struct freeSpaceInformation *fsi = getFreeSpaceInformation(blockSize);
-        printf("-------------------------------------------------------\n");
+        printf("-------------------------------------------------------------------------------\n");
         printf("FREE SPACE INFORMATION ALREADY CREATED.\n");
         printf("Free Space Available: %llu\n", fsi->freeSpace);
         printf("Lowest Block Accessible: %u\n", fsi->lowestBlockAccessible);
         printf("Highest Block Accessible: %llu\n", fsi->highestBlockAccessible);
-        printf("-------------------------------------------------------\n\n");
-        
+        printf("-------------------------------------------------------------------------------\n");
         
         //Cleanup
         free(vcb);
@@ -166,14 +190,13 @@ void intializeFreeSpaceInformation(uint64_t volumeSize, int16_t blockSize) {
     }
     
     // Print info
-    printf("-------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------\n");
     printf("CREATING FREE SPACE INFORMATION...\n");
     printf("Free Space Available: %llu\n", fsi->freeSpace);
     printf("Lowest Block Accessible: %u\n", fsi->lowestBlockAccessible);
     printf("Highest Block Accessible Size: %llu\n", fsi->highestBlockAccessible);
-    printf("First Free Block: 100\n");
-    printf("-------------------------------------------------------\n\n");
-    
+    printf("-------------------------------------------------------------------------------\n\n");
+
     // Write blocks to file system
     LBAwrite(fsi, 49, 1);
     
@@ -385,7 +408,6 @@ void listTreeHelper(uint64_t parentDirectoryBlockNumber, int directoryLevel, uin
 
 void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSize) {
     // Print info
-    printf("-------------------------------------------------------\n");
     printf("Changing Metadata...\n");
     
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
@@ -399,8 +421,7 @@ void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSiz
         setVCBCurrentDirectory(originalDirectory, blockSize);
         
         // Print error, and exit the function
-        printf("No metadata change. Directory Not Found!\n");
-        printf("-------------------------------------------------------\n\n");
+        printf("No metadata change. Directory Not Found!\n\n");
         return;
     }
     
@@ -414,8 +435,7 @@ void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSiz
     // Update modified date to now
     dir->dateModified =  (unsigned int)time(NULL);
     
-    printf("Metadata changed. Permission set to %d\n",  newPermissions);
-    printf("-------------------------------------------------------\n\n");
+    printf("Metadata changed. Permission set to %d\n\n",  newPermissions);
     
     // Write back directory to file system
     LBAwrite(dir, 1, getVCBCurrentDirectory(blockSize));
@@ -429,7 +449,6 @@ void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSiz
 
 void printDirectoryInfo(char* directoryPath, uint16_t blockSize) {
     // Print info
-    printf("-------------------------------------------------------\n");
     printf("Printing Directory Information...\n");
     
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
@@ -443,8 +462,7 @@ void printDirectoryInfo(char* directoryPath, uint16_t blockSize) {
         setVCBCurrentDirectory(originalDirectory, blockSize);
         
         // Print error, and exit the function
-        printf("Directory Not Found!\n");
-        printf("-------------------------------------------------------\n\n");
+        printf("Directory Not Found!\n\n");
         return;
     }
     
@@ -466,8 +484,7 @@ void printDirectoryInfo(char* directoryPath, uint16_t blockSize) {
         printf("File Modification Date: %u\n", dir->dateModified);
     }
     
-    printf("Data Printed Successfully.\n");
-    printf("-------------------------------------------------------\n\n");
+    printf("Data Printed Successfully.\n\n");
 
     
     // Return to the orignal directory user was at
@@ -479,7 +496,6 @@ void printDirectoryInfo(char* directoryPath, uint16_t blockSize) {
 
 uint64_t createDirectoryOLD(uint16_t blockSize) {
     // Print Info
-    printf("-------------------------------------------------------\n");
     printf("Creating Directory...\n");
     printf("Please Enter a Directory Name. No Spaces Allowed: ");
     
@@ -521,7 +537,6 @@ uint64_t createDirectoryOLD(uint16_t blockSize) {
     else {
         printf("Invalid Directoy Name. No Spaces Allowed!\n");
         printf("Failed to Create New Directory.\n");
-        printf("-------------------------------------------------------\n");
         
         // Return block 0, since the creation was unsuccessfull
         return 0;
@@ -551,15 +566,13 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
     memset(tempDir->indexLocations, 0x00, (sizeof(tempDir->indexLocations)/sizeof(tempDir->indexLocations[0])));
     
     // Print info
-    printf("-------------------------------------------------------\n");
     printf("CREATING NEW DIRECTORY...\n");
     printf("Directory Name: %s\n", tempDir->name);
     printf("Directory Location: %llu\n", tempDir->blockLocation);
     printf("Directory Permissions: %hu\n", tempDir->permissions);
     printf("Directory Creation Date: %u\n", tempDir->dateCreated);
     printf("Parent Directory location: %llu\n", tempDir->parentDirectory);
-    printf("Child Directory locations: * No Children Directories *\n");
-    printf("-------------------------------------------------------\n\n");
+    printf("Child Directory locations: * No Children Directories *\n\n");
     
     // Write to open block
     LBAwrite(tempDir, 1, dirBlockLocation);
@@ -617,7 +630,6 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     }
     
     // Print info
-    printf("-------------------------------------------------------\n");
     printf("CREATING NEW FILE...\n");
     printf("File Name: %s\n", tempDir->name);
     printf("File Extension: %s\n", tempDir->fileExtension);
@@ -626,8 +638,7 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     printf("File Creation Date: %u\n", tempDir->dateCreated);
     printf("Number of Blocks Reserved for File: %d\n", numberOfBlocksNeeded);
     printf("Directory Location: %llu\n", tempDir->blockLocation);
-    printf("Parent Directory location: %llu\n", tempDir->parentDirectory);
-    printf("-------------------------------------------------------\n\n");
+    printf("Parent Directory location: %llu\n\n", tempDir->parentDirectory);
     
     // Write this file directory to dirBlockLocation
     LBAwrite(tempDir, 1, dirBlockLocation);
@@ -710,15 +721,15 @@ void createRootDirectory(uint16_t blockSize) {
     memset(tempRootDir->indexLocations, 0x00, (sizeof(tempRootDir->indexLocations)/sizeof(tempRootDir->indexLocations[0])));
     
     // Print info
-    printf("-------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------\n");
     printf("CREATING *ROOT* DIRECTORY...\n");
     printf("Directory Name: %s\n", tempRootDir->name);
     printf("Directory Location: %llu\n", tempRootDir->blockLocation);
     printf("Directory Permissions: %hu\n", tempRootDir->permissions);
     printf("Directory Creation Date: %u\n", tempRootDir->dateCreated);
     printf("Child Directory locations: None\n");
-    printf("-------------------------------------------------------\n\n");
-    
+    printf("-------------------------------------------------------------------------------\n\n");
+
     // Write back the block
     LBAwrite(tempRootDir, 1, 50);
     
@@ -899,9 +910,7 @@ void displayCurrentDirectory(uint16_t blockSize) {
     // Get the directory structure of the current directory
     struct directoryEntry *dir = getDirectoryEntryFromBlock(currentDirectory, blockSize);
     
-    printf("-------------------------------------------------------\n");
-    printf("CURRENT DIRECTORY: %s\n", dir->name);
-    printf("-------------------------------------------------------\n\n");
+    printf("CURRENT DIRECTORY: %s\n\n", dir->name);
     
     // Cleanup
     free(dir);
@@ -1175,7 +1184,6 @@ void sampleCreateDirectories(int16_t blockSize) {
 
 void exitFileSystem(int16_t blockSize) {
     // Print Info
-    printf("-------------------------------------------------------\n");
     printf("CLOSING AND EXITING FILE SYSTEM...\n");
     
     // Set the current directory back to the root at close
@@ -1185,8 +1193,7 @@ void exitFileSystem(int16_t blockSize) {
     closePartitionSystem();
 
     // Print success messages
-    printf("FILE SYSTEM CLOSED SUCCESSFULLY!\n");
-    printf("-------------------------------------------------------\n");
+    printf("FILE SYSTEM CLOSED SUCCESSFULLY!\n\n");
     
     // Exit
     exit (0);
@@ -1287,7 +1294,7 @@ int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
 {
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
     
-  int returnStat =  changeDirectory(srcPath, 1, blockSize);
+    int returnStat =  changeDirectory(srcPath, 1, blockSize);
     if(returnStat < 0)
     {
         printf("Source Path Not Valid.\n\n");
@@ -1320,6 +1327,9 @@ int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
     
     free(src);
     free(tar);
+    
+    // Print space before next command
+    printf("\n");
     
     return 0;
 }

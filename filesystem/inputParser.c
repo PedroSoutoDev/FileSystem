@@ -92,7 +92,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
     else if (strcmp(argv[0],"cpyfile") == 0) {
         copyFile(argv[1], argv[2], blockSize);
     }
-    else if (strcmp(argv[0],"mvdir") == 0 || strcmp(argv[0],"mvfile")) {
+    else if (strcmp(argv[0],"mvdir") == 0 || strcmp(argv[0],"mvfile") == 0) {
         moveDirectory(argv[1], argv[2], blockSize);
     }
     else if (strcmp(argv[0],"chmod") == 0) {
@@ -111,8 +111,11 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         }
         setMetaData(argv[1], atoi(argv[2]), blockSize);
     }
-    else if (strcmp(argv[0],"clear")) {
+    else if (strcmp(argv[0],"clear") == 0) {
         //TODO: Clear console
+        printf("Clearing console. This May Not Work - Depends On The Terminal You Are Using.\n");
+        system("clear");
+        printf("\n\n");
     }
     else if (strcmp(argv[0],"exit") == 0 || strcmp(argv[0],"e") == 0 || strcmp(argv[0],"Exit") == 0 || strcmp(argv[0],"E") == 0) {
         exitFileSystem(blockSize);
@@ -194,7 +197,7 @@ int userInputIsValid (int argc, char *argv[]) {
                 return 0;
             }
         }
-        // If we checked all valid commands, and none matched, then this is not a valid command
+        // If we just checked the last command, and none matched, then this is not a valid command
         else if (i == (numberOfCommands - 1)){
             printf("Invalid Command.\n\n");
             return 0;

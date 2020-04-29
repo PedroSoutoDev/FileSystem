@@ -63,7 +63,7 @@ int main (int argc, char *argv[]) {
     remove(argv[1]);
     
     // Start Partition System
-    printf("-------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------\n");
     printf("OPENING FILE SYSTEM...\n");
     char * filename = argv[1];
     uint64_t volumeSize = atoll (argv[2]);
@@ -77,8 +77,8 @@ int main (int argc, char *argv[]) {
         printf("ERROR OPENING FILE SYSTEM!\n");
         exit(1);
     }
-    printf("-------------------------------------------------------\n\n");
-    
+    printf("-------------------------------------------------------------------------------\n\n");
+
     // If a Volume Control Block has not been created before, create it now
     if (!hasVolumeControlBlock(blockSize)) {
         // This will create the Volume Control Block AND it will also initialize the Free Space Information blocks AND it will create the root directory
@@ -96,6 +96,8 @@ int main (int argc, char *argv[]) {
     char userInput[BUFFERSIZE];
     char *argList[BUFFERSIZE];
     char *token;
+    // On launch, label and print commands
+    printf("*** COMMANDS ***\n");
     printCommands();
     while (1) {
         // Print prompt
