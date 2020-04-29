@@ -1211,7 +1211,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     setBlockAsUsed(dirBlockLocation, blockSize);
     
     // Update parent node's 'fileIndexLocation' to point to this directory
-    addChildDirectoryIndexLocationToParent(tarFile->parentDirectory, dirBlockLocation, blockSize);
+    addChildDirectoryIndexLocationToParent(tarFile->blockLocation, dirBlockLocation, blockSize);
     
     // Since we created a directory, we must update the directory count
     increaseVCBDirectoryCount(blockSize);
