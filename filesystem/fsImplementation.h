@@ -5,8 +5,8 @@
 * Student ID: 918412864
 * Name: Cassie Sherman
 * Student ID: 918192878
-* Name:
-* Student ID:
+* Name: Aaron Schlichting
+* Student ID: 917930213
 * Name:
 * Student ID:
 *
@@ -38,10 +38,6 @@ void* getAllDirectoriesStructs(uint16_t blockSize);
 // This will get A SINGLE DIRECTORY struct entry at a specific block
 // Returns a pointer to the directory entry struct
 void* getDirectoryEntryFromBlock(uint64_t directoryBlockNumber, uint16_t blockSize);
-
-// * DO NOT CALL THIS *
-// This is a helper functions, and should not be called directly. Use listDirectories() to list directories!
-void listDirectoriesHelper(uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
 
 // This will print the sub directories of the given parent
 // It takes in a parentDirectoryBlockNumber, which is the block of the directory you want to list FROM.
@@ -116,6 +112,10 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize);
 // elevated will either be 0 or 1. 0 mean not elevated, which means you CANNOT cd into a file. 1 means elevated, which means you CAN cd into a file
 // Returns 1 if change was successfull, -1 is there directory does not exist, and -2 if there was an attemp to cd into a file
 int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize);
+
+// * DO NOT CALL THIS *
+// Basic functions to change directories. Should only be called by command, since it is not able to CD into a file
+void cdCommand(char* directoryPath, uint16_t blockSize);
 
 // * DO NOT CALL THIS *
 // This function is called by change directory. This function expects a SINGLE child to change to. changeDirectory() is the one to call, which will parse the path and call this function as needed to change directories

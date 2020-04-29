@@ -5,8 +5,8 @@
 * Student ID: 918412864
 * Name: Cassie Sherman
 * Student ID: 918192878
-* Name:
-* Student ID:
+* Name: Aaron Schlichting
+* Student ID: 917930213
 * Name:
 * Student ID:
 *
@@ -34,7 +34,12 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         listTree(getVCBCurrentDirectory(blockSize), blockSize);
     }
     else if (strcmp(argv[0],"cd") == 0) {
-        changeDirectory(argv[1], 0, blockSize);
+        // If there was no arguments, then user wants to cd back to root
+        if (argv[1] == NULL) {
+            setVCBCurrentDirectory(getVCBRootDirectory(blockSize), blockSize);
+            return;
+        }
+        cdCommand(argv[1], blockSize);
     }
     else if (strcmp(argv[0],"pwd") == 0) {
         displayCurrentDirectory(blockSize);
@@ -43,9 +48,34 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         printDirectoryInfo(argv[1], blockSize);
     }
     else if (strcmp(argv[0],"mkdir") == 0) {
+        // Make sure that directory name does not contain improper characters
+        for (int i = 0; i < strlen(argv[1]) ; i++) {
+            // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
+            if (! ((argv[1][i] >= 48 && argv[1][i] <= 57) || (argv[1][i] >= 65 && argv[1][i] <= 90) || (argv[1][i] >= 97 && argv[1][i] <= 122)) ) {
+                printf("Invalid Directory Name. Directory May Only Contain Letters/Numbers.\n\n");
+                return;
+            }
+        }
         createDirectory(argv[1], getVCBCurrentDirectory(blockSize), blockSize);
     }
     else if (strcmp(argv[0],"mkfile") == 0) {
+        // Make sure that file name does not contain improper characters
+        for (int i = 0; i < strlen(argv[1]) ; i++) {
+            // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
+            if (! ((argv[1][i] >= 48 && argv[1][i] <= 57) || (argv[1][i] >= 65 && argv[1][i] <= 90) || (argv[1][i] >= 97 && argv[1][i] <= 122)) ) {
+                printf("Invalid File Name. File May Only Contain Letters/Numbers.\n\n");
+                return;
+            }
+        }
+        // Make sure that a file extension does not contain improper characters
+        for (int i = 0; i < strlen(argv[2]) ; i++) {
+            // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
+            // If statement reads as: (number) OR (lowercase letter) OR (uppercase letter)
+            if (! ((argv[2][i] >= 48 && argv[2][i] <= 57) || (argv[2][i] >= 65 && argv[2][i] <= 90) || (argv[2][i] >= 97 && argv[2][i] <= 122)) ) {
+                printf("Invalid File Extension. File Extension May Only Contain Letters/Numbers.\n\n");
+                return;
+            }
+        }
         // Make sure that the file size argument is a number
         for (int i = 0; i < strlen(argv[3]) ; i++) {
             // Check if the ASCII value is between 48 and 57, which corresponds to 0-9
@@ -62,7 +92,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
     else if (strcmp(argv[0],"cpyfile") == 0) {
         copyFile(argv[1], argv[2], blockSize);
     }
-    else if (strcmp(argv[0],"mvdir") == 0) {
+    else if (strcmp(argv[0],"mvdir") == 0 || strcmp(argv[0],"mvfile")) {
         moveDirectory(argv[1], argv[2], blockSize);
     }
     else if (strcmp(argv[0],"chmod") == 0) {
@@ -80,6 +110,9 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
             return;
         }
         setMetaData(argv[1], atoi(argv[2]), blockSize);
+    }
+    else if (strcmp(argv[0],"clear")) {
+        //TODO: Clear console
     }
     else if (strcmp(argv[0],"exit") == 0 || strcmp(argv[0],"e") == 0 || strcmp(argv[0],"Exit") == 0 || strcmp(argv[0],"E") == 0) {
         exitFileSystem(blockSize);
@@ -106,6 +139,7 @@ int userInputIsValid (int argc, char *argv[]) {
         "chmod",
         "TODO: Copy from the normal filesystem to this filesystem",
         "TODO: Copy from this filesystem to the normal filesystem",
+        "clear",
         "commands",
         "c",
         "Commands",
@@ -125,12 +159,14 @@ int userInputIsValid (int argc, char *argv[]) {
         1,  // info
         1,  // mkdir
         3,  // mkfile
-        1,  // rmdile
+        1,  // rmfile
         2,  // cpyfile
         2,  // mvfile
+        2,  // mvdir
         2,  // setdata
         99, // TODO: Copy from the normal filesystem to this filesystem
         99, // TODO: Copy from this filesystem to the normal filesystem
+        0,  //
         0,  // commands
         0,  // c
         0,  // Commands

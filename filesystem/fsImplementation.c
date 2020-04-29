@@ -5,8 +5,8 @@
 * Student ID: 918412864
 * Name: Cassie Sherman
 * Student ID: 918192878
-* Name:
-* Student ID:
+* Name: Aaron Schlichting
+* Student ID: 917930213
 * Name:
 * Student ID:
 *
@@ -37,10 +37,11 @@ void printCommands(){
     printf("Display Working Directory: 'pwd'\n");
     printf("Display Directory Information: 'info <directory path>'\n");
     printf("Create Directoty: 'mkdir <directory name>'\n");
-    printf("Add File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
+    printf("Make File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
     printf("Remove File: 'rmfile <file name>\n");
     printf("Copy File: 'cpyfile <file path> <destination directory path>'\n");
-    printf("Move File: 'cpyfile <file path> <destination directory path>'\n");
+    printf("Move File: 'mvfile <file path> <destination directory path>'\n");
+    printf("Move Directory: 'mvdir <file path> <destination directory path>'\n");
     printf("Set File Permission Metadata: 'chmod <file path> <file permission>'\n");
     printf("Copy from the normal filesystem to this filesystem: 'TODO!'\n");
     printf("Copy from this filesystem to the normal filesystem: 'TODO'\n");
@@ -287,29 +288,17 @@ void* getDirectoryEntryFromBlock(uint64_t directoryBlockNumber, uint16_t blockSi
     }
 }
 
-void listDirectories (uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
-    printf("-------------------------------------------------------\n");
-    printf("LISTING DIRECTORIES...\n");
-    listDirectoriesHelper(parentDirectoryBlockNumber, blockSize);
-    printf("-------------------------------------------------------\n\n");
-}
-
 void listTree (uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
-    printf("-------------------------------------------------------\n");
-    printf("LISTING TREE...\n");
     listTreeHelper(parentDirectoryBlockNumber, 0, blockSize);
-    printf("-------------------------------------------------------\n\n");
+    printf("\n");
 }
 
-void listDirectoriesHelper(uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
+void listDirectories(uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
     // Since we know the location of the directory, we just need to read a single block
     struct directoryEntry *dir = malloc(blockSize);
     LBAread(dir, 1, parentDirectoryBlockNumber);
     
-    // Print current directory name
-    printf("-%s\n", dir->name);
-    
-    // Go to every child and print it
+    // Go to every child and print it if it is a directory
     for (int i = 0; dir->indexLocations[i]  != 0; i++) {
         // Create a temp directory to read name from
         struct directoryEntry *tempDir = malloc(blockSize);
@@ -317,16 +306,29 @@ void listDirectoriesHelper(uint64_t parentDirectoryBlockNumber, uint16_t blockSi
         
         // If the directory is a file, print the file name and extension
         if (strcmp(tempDir->fileExtension, DIRECTORY_EXTENSION_NAME) == 0) {
-            printf("   - %s\n", tempDir->name);
+            printf("○ %s\n", tempDir->name);
         }
-        // If the directory is an actual directory, simply print its name
-        else {
-            printf("   * %s.%s\n", tempDir->name, tempDir->fileExtension);
+        // Cleanup temp directory
+        free(tempDir);
+    }
+    
+    // Go to every child and print it if it is a file
+    for (int i = 0; dir->indexLocations[i]  != 0; i++) {
+        // Create a temp directory to read name from
+        struct directoryEntry *tempDir = malloc(blockSize);
+        tempDir = getDirectoryEntryFromBlock(dir->indexLocations[i], blockSize);
+        
+        // If the directory is a file, print the file name and extension
+        if (strcmp(tempDir->fileExtension, DIRECTORY_EXTENSION_NAME) != 0) {
+            printf("◉ %s.%s\n", tempDir->name, tempDir->fileExtension);
         }
         
         // Cleanup temp directory
         free(tempDir);
     }
+    
+    // Print spacer to have space before next command
+    printf("\n");
     
     // Cleanup
     free(dir);
@@ -341,16 +343,24 @@ void listTreeHelper(uint64_t parentDirectoryBlockNumber, int directoryLevel, uin
     // In order to make it look like a tree, we need to print spaces for deeper directories
     // These spaces are a function of the level we start are on. For instance, the root is at level 0, so it have no spaces.
     for (int i = 0; i < directoryLevel; i++) {
-        printf("   ");
+        printf("    ");
     }
+    
+    // The root should have a different denominator
+    if (directoryLevel == 0)
+        printf("● ");
+    else if (strcmp(dirs->fileExtension, DIRECTORY_EXTENSION_NAME) == 0)
+        printf("○ ");
+    else
+        printf("◉ ");
     
     // If the directory is a file, print the file name and extension
     if (strcmp(dirs->fileExtension, DIRECTORY_EXTENSION_NAME) == 0) {
-        printf("- %s\n", dirs->name);
+        printf("%s\n", dirs->name);
     }
     // If the directory is an actual directory, simply print its name
     else {
-        printf("* %s.%s\n", dirs->name, dirs->fileExtension);
+        printf("%s.%s\n", dirs->name, dirs->fileExtension);
         
         // We also do not want to print it's children, since it does not have any sub directories (its a file)
         // Cleanup
@@ -753,6 +763,18 @@ void setVCBCurrentDirectory(uint64_t newDirectoryBlock, uint16_t blockSize) {
     free(vcb);
 }
 
+void cdCommand(char* directoryPath, uint16_t blockSize) {
+    // Change directories
+    int changeStatus = changeDirectory(directoryPath, 0, blockSize);
+    
+    // If there directory does not exist, print that info
+    if (changeStatus != 1) {
+        printf("Error Changing Directories. Directory does not exist.\n\n");
+        return;
+    }
+    printf("\n");
+}
+
 int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize) {
     // Save the current directory, in case there is an error changing directories when we call the helper
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
@@ -768,6 +790,14 @@ int changeDirectory(char* directoryPath, uint16_t elevated, uint16_t blockSize) 
         directoryList[argc] = token;
         argc++;
         token = strtok(NULL, "/");
+    }
+    
+    // If the last argument is a file, the user might enter FILENAME.EXTENSION (for instance: Pictures/Hawaii/sunset.jpg)
+    // Since the extension is not part of the directory name, we want to make sure to chop off anything after the '.'
+    // Only do this if the diretory is not '..' however, since '..' is in fact a valid path
+    if (strcmp(directoryList[argc - 1], "..") != 0) {
+        token = strtok(directoryList[argc - 1], ".");
+        directoryList[argc - 1] = token;
     }
     
     for (int i = 0 ; i < argc; i++) {
@@ -1124,6 +1154,7 @@ void sampleCreateDirectories(int16_t blockSize) {
             // Create sub hawaii files
             createFileDirectory("familyPic", "png", 3234, hawaiiLocation, blockSize);
             createFileDirectory("sunset", "png", 6777, hawaiiLocation, blockSize);
+            createDirectory("HotelPictures", hawaiiLocation, blockSize);
             createFileDirectory("oncean", "jpg", 993, hawaiiLocation, blockSize);
         createDirectory("NewYears2019", picturesLocation, blockSize);
     
@@ -1171,7 +1202,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     int returnStat = changeDirectory(srcFilePath, admin, blockSize);
     if(returnStat < 0)
     {
-        printf("Source path directory not valid\n\n");
+        printf("Source Path Not Valid.\n\n");
         return -1;
     }
     uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
@@ -1183,7 +1214,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     returnStat = changeDirectory(tarFilePath, 0, blockSize);
     if(returnStat < 0)
     {
-        printf("Target path directory not valid\n\n");
+        printf("Target Path Not Valid.\n\n");
         free(srcFile);
         return -1;
     }
@@ -1236,7 +1267,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize)
     setBlockAsUsed(dirBlockLocation, blockSize);
     
     // Update parent node's 'fileIndexLocation' to point to this directory
-    addChildDirectoryIndexLocationToParent(tarFile->parentDirectory, dirBlockLocation, blockSize);
+    addChildDirectoryIndexLocationToParent(tarFile->blockLocation, dirBlockLocation, blockSize);
     
     // Since we created a directory, we must update the directory count
     increaseVCBDirectoryCount(blockSize);
@@ -1259,7 +1290,7 @@ int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
   int returnStat =  changeDirectory(srcPath, 1, blockSize);
     if(returnStat < 0)
     {
-        printf("Source path directory not valid\n\n");
+        printf("Source Path Not Valid.\n\n");
         return -1;
     }
     uint64_t srcPathBlock = getVCBCurrentDirectory(blockSize);
@@ -1270,7 +1301,7 @@ int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize)
     returnStat = changeDirectory(tarPath, 0, blockSize);
     if(returnStat < 0)
     {
-        printf("Source path directory not valid\n\n");
+        printf("Target Path Not Valid.\n\n");
         free(src);
         return -1;
     }

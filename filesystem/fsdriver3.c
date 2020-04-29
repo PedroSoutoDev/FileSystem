@@ -5,8 +5,8 @@
 * Student ID: 918412864
 * Name: Cassie Sherman
 * Student ID: 918192878
-* Name:
-* Student ID:
+* Name: Aaron Schlichting
+* Student ID: 917930213
 * Name:
 * Student ID:
 *
@@ -83,14 +83,14 @@ int main (int argc, char *argv[]) {
     if (!hasVolumeControlBlock(blockSize)) {
         // This will create the Volume Control Block AND it will also initialize the Free Space Information blocks AND it will create the root directory
         initializeVolumeControlBlock(volumeSize, PARTITION_NAME, blockSize);
+        
+        // For DEVELOPMENT. Will be removed later. This creates some sample directories, thus starting the file system with some basic directories (Pictures, Videos, Documents, ...etc)
+        // TODO: Remove before turning in!
+        sampleCreateDirectories(blockSize);
     }
     
     // Set the current directory back to the root at launch
     setVCBCurrentDirectory(getVCBRootDirectory(blockSize), blockSize);
-    
-    // For DEVELOPMENT. Will be removed later. This creates some sample directories, thus starting the file system with some basic directories (Pictures, Videos, Documents, ...etc)
-    // TODO: Remove before turning in!
-    sampleCreateDirectories(blockSize);
     
     // Main loop of program, where we ask for user input then execute t that functionality
     char userInput[BUFFERSIZE];
