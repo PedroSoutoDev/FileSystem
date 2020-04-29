@@ -39,10 +39,6 @@ void* getAllDirectoriesStructs(uint16_t blockSize);
 // Returns a pointer to the directory entry struct
 void* getDirectoryEntryFromBlock(uint64_t directoryBlockNumber, uint16_t blockSize);
 
-// * DO NOT CALL THIS *
-// This is a helper functions, and should not be called directly. Use listDirectories() to list directories!
-void listDirectoriesHelper(uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
-
 // This will print the sub directories of the given parent
 // It takes in a parentDirectoryBlockNumber, which is the block of the directory you want to list FROM.
 void listDirectories(uint64_t parentDirectoryBlockNumber, uint16_t blockSize);

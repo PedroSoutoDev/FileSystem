@@ -34,6 +34,11 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         listTree(getVCBCurrentDirectory(blockSize), blockSize);
     }
     else if (strcmp(argv[0],"cd") == 0) {
+        // If there was no arguments, then user wants to cd back to root
+        if (argv[1] == NULL) {
+            setVCBCurrentDirectory(getVCBRootDirectory(blockSize), blockSize);
+            return;
+        }
         cdCommand(argv[1], blockSize);
     }
     else if (strcmp(argv[0],"pwd") == 0) {
@@ -103,6 +108,9 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         }
         setMetaData(argv[1], atoi(argv[2]), blockSize);
     }
+    else if (strcmp(argv[0],"clear")) {
+        //TODO: Clear console
+    }
     else if (strcmp(argv[0],"exit") == 0 || strcmp(argv[0],"e") == 0 || strcmp(argv[0],"Exit") == 0 || strcmp(argv[0],"E") == 0) {
         exitFileSystem(blockSize);
     }
@@ -128,6 +136,7 @@ int userInputIsValid (int argc, char *argv[]) {
         "chmod",
         "TODO: Copy from the normal filesystem to this filesystem",
         "TODO: Copy from this filesystem to the normal filesystem",
+        "clear",
         "commands",
         "c",
         "Commands",
@@ -154,6 +163,7 @@ int userInputIsValid (int argc, char *argv[]) {
         2,  // setdata
         99, // TODO: Copy from the normal filesystem to this filesystem
         99, // TODO: Copy from this filesystem to the normal filesystem
+        0,  //
         0,  // commands
         0,  // c
         0,  // Commands
