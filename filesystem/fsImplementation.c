@@ -638,6 +638,7 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     // Return the block location of this new file directory
     return dirBlockLocation;
 }
+
 int removeFile(char * filePath, uint16_t blockSize){
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
 
@@ -653,6 +654,10 @@ int removeFile(char * filePath, uint16_t blockSize){
 
     // Jump back to original directory
     setVCBCurrentDirectory(originalDirectory, blockSize);
+    
+    for (int i = 0; srcFile->indexLocations[i]  != 0; i++) {
+        setBlockAsFree(srcFile->indexLocations[i], blockSize);
+    }
 
     // Update block to Free
     setBlockAsFree(srcFileBlock, blockSize);
