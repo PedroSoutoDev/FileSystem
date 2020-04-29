@@ -642,31 +642,41 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
 int removeFile(char * filePath, uint16_t blockSize){
     uint64_t originalDirectory = getVCBCurrentDirectory(blockSize); // saves original spot
 
-    // Get info on the file path
+    // Attempt to move to the file directory
     int returnStat = changeDirectory(filePath, 1, blockSize);
+    
+    // If the path does not exist, report it and exit function
     if(returnStat < 0)
     {
         printf("File Path Not Valid\n\n");
         return -1;
     }
+    
+    // Get block of file directory
     uint64_t srcFileBlock = getVCBCurrentDirectory(blockSize);
-    struct directoryEntry *srcFile = getDirectoryEntryFromBlock(srcFileBlock, blockSize); //get info from srcEntry
+    
+    // Get actual file directory entry from block location
+    struct directoryEntry *srcFile = getDirectoryEntryFromBlock(srcFileBlock, blockSize);
 
     // Jump back to original directory
     setVCBCurrentDirectory(originalDirectory, blockSize);
     
+    // Iterate through all blocks that create this file, and set them as free
     for (int i = 0; srcFile->indexLocations[i]  != 0; i++) {
         setBlockAsFree(srcFile->indexLocations[i], blockSize);
     }
 
-    // Update block to Free
+    // Update actual file directory block to free
     setBlockAsFree(srcFileBlock, blockSize);
 
-    // Remove file from directory
+    // Remove file reference from its parent
     removeChildFromParent(srcFile->parentDirectory, srcFile->blockLocation, blockSize);
 
     // Cleanup
     free(srcFile);
+    
+    // Print spacer for next command
+    printf("\n");
 
     // Return 1 on success
     return 1;
