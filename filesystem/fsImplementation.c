@@ -593,7 +593,7 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
     return dirBlockLocation;
 }
 
-uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileSize, uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
+uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
     // Create temp directory, which will be written to file system
     struct directoryEntry *tempDir = malloc(blockSize);
     
@@ -603,11 +603,11 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     tempDir->permissions = 644; // Default permission
     tempDir->dateCreated = (unsigned int)time(NULL);
     tempDir->dateModified = (unsigned int)time(NULL);
-    tempDir->fileSize = fileSize;
+    tempDir->fileSize = 0;
     tempDir->parentDirectory = parentDirectoryBlockNumber;
     
     // Calculate number of blocks needed for this file
-    int numberOfBlocksNeeded = (int)((fileSize / blockSize) + 1);
+    //int numberOfBlocksNeeded = (int)((fileSize / blockSize) + 1);
     
     // Find open block to write this directory to
     uint64_t dirBlockLocation = findSingleFreeLBABlockInRange(51, 99, blockSize);
@@ -617,18 +617,19 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     
     // Create array to store free blocks. These blocks will be used to store the actual 'contents' of the file
     // Make sure to look starting at block 100, since everything before that is used by the file system
-    uint64_t *freeBlocks = findFreeLBABlocksInRange(100, getHighestUseableBlock(blockSize), numberOfBlocksNeeded, blockSize);
+    //uint64_t *freeBlocks = findFreeLBABlocksInRange(100, getHighestUseableBlock(blockSize), numberOfBlocksNeeded, blockSize);
     
     // Set the indexLocations to 0, so we know that this are has been wiped clean
     memset(tempDir->indexLocations, 0x00, (sizeof(tempDir->indexLocations)/sizeof(tempDir->indexLocations[0])));
     
     // Assign the block we set aside to these index locations
     // Also set all the index blocks that this file will need to used
+    /*
     for (int i = 0; i < numberOfBlocksNeeded; i++) {
         tempDir->indexLocations[i] = freeBlocks[i];
         setBlockAsUsed(freeBlocks[i], blockSize);
     }
-    
+    */
     // Print info
     printf("CREATING NEW FILE...\n");
     printf("File Name: %s\n", tempDir->name);
@@ -636,7 +637,7 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     printf("File Size: %llu bytes\n", tempDir->fileSize);
     printf("File Permissions: %hu\n", tempDir->permissions);
     printf("File Creation Date: %u\n", tempDir->dateCreated);
-    printf("Number of Blocks Reserved for File: %d\n", numberOfBlocksNeeded);
+    //printf("Number of Blocks Reserved for File: %d\n", numberOfBlocksNeeded);
     printf("Directory Location: %llu\n", tempDir->blockLocation);
     printf("Parent Directory location: %llu\n\n", tempDir->parentDirectory);
     
@@ -654,7 +655,7 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileS
     
     // Cleanup
     free(tempDir);
-    free(freeBlocks);
+    //free(freeBlocks);
     
     // Return the block location of this new file directory
     return dirBlockLocation;
@@ -1161,10 +1162,10 @@ void sampleCreateDirectories(int16_t blockSize) {
         // Create sub pictures directories
         uint64_t hawaiiLocation = createDirectory("Hawaii", picturesLocation, blockSize);
             // Create sub hawaii files
-            createFileDirectory("familyPic", "png", 3234, hawaiiLocation, blockSize);
-            createFileDirectory("sunset", "png", 6777, hawaiiLocation, blockSize);
+            createFileDirectory("familyPic", "png", hawaiiLocation, blockSize);
+            createFileDirectory("sunset", "png", hawaiiLocation, blockSize);
             createDirectory("HotelPictures", hawaiiLocation, blockSize);
-            createFileDirectory("oncean", "jpg", 993, hawaiiLocation, blockSize);
+            createFileDirectory("oncean", "jpg", hawaiiLocation, blockSize);
         createDirectory("NewYears2019", picturesLocation, blockSize);
     
     // Create documents directory
@@ -1172,8 +1173,8 @@ void sampleCreateDirectories(int16_t blockSize) {
         // Create sub document directories
         uint64_t identificationLocation = createDirectory("Identifications", documentsLocation, blockSize);
             // Create sub identification files
-            createFileDirectory("socialSecurityCard", "pdf", 5352, identificationLocation, blockSize);
-            createFileDirectory("driversLicense", "png", 5352, identificationLocation, blockSize);
+            createFileDirectory("socialSecurityCard", "pdf", identificationLocation, blockSize);
+            createFileDirectory("driversLicense", "png", identificationLocation, blockSize);
         createDirectory("LegalPaperwork", documentsLocation, blockSize);
     
     // Create videos directory

@@ -75,7 +75,7 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
 void createRootDirectory(uint16_t blockSize);
 
 // Add file
-uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileSize, uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
+uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
 
 // Remove file
 int removeFile(char * filePath, uint16_t blockSize);

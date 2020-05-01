@@ -76,15 +76,15 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
                 return;
             }
         }
-        // Make sure that the file size argument is a number
+        /*// Make sure that the file size argument is a number
         for (int i = 0; i < strlen(argv[3]) ; i++) {
             // Check if the ASCII value is between 48 and 57, which corresponds to 0-9
             if (argv[3][i] < 48 || argv[3][i] > 57) {
                 printf("Invalid Argument. File Size Must Be a Number.\n\n");
                 return;
             }
-        }
-        createFileDirectory(argv[1], argv[2], atoi(argv[3]), getVCBCurrentDirectory(blockSize), blockSize);
+        }*/
+        createFileDirectory(argv[1], argv[2], getVCBCurrentDirectory(blockSize), blockSize);
     }
     else if(strcmp(argv[0],"rmfile") == 0) {
         removeFile(argv[1], blockSize);
@@ -161,7 +161,7 @@ int userInputIsValid (int argc, char *argv[]) {
         0,  // pwd
         1,  // info
         1,  // mkdir
-        3,  // mkfile
+        2,  // mkfile
         1,  // rmfile
         2,  // cpyfile
         2,  // mvfile
