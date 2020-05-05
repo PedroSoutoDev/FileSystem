@@ -32,48 +32,26 @@ void printCommands(){
     printf("-------------------------------------------------------------------------------\n");
     printf("%-30s","List Directories:"); printf("'ls'\n");
     printf("%-30s","Display Tree:"); printf("'tree'\n");
-    printf("%-30s","Change Directories:"); printf("'cd <directory path>' or 'cd ..'\n");
+    printf("%-30s","Change Directories:"); printf("'cd <directory path>''\n");
     printf("%-30s","Display Working Directory:"); printf("'pwd'\n");
     printf("%-30s","Display Directory Info:"); printf("'info <directory path>'\n");
-    printf("%-30s","Create Directoty:"); printf("'mkdir <directory name>'\n");
-    printf("%-30s","Move Directory:"); printf("'mvdir <file path> <destination directory path>'\n");
+    printf("%-30s","Create Directoty:"); printf("'makedir <directory name>'\n");
+    printf("%-30s","Move Directory:"); printf("'movedir <source directory path> <destination directory path>'\n");
     printf("\n");
-    printf("%-30s","Create File:"); printf("'mkfile <file name> <file extension> <file size>'\n");
-    printf("%-30s","Remove File:"); printf("'rmfile <file name>\n");
-    printf("%-30s","Copy File:"); printf("'cpyfile <file path> <destination directory path>'\n");
-    printf("%-30s","Move File:"); printf("'mvfile <file path> <destination directory path>'\n");
+    printf("%-30s","Create File:"); printf("'makefile <file name> <file extension>\n");
+    printf("%-30s","Remove File:"); printf("'removefile <file path>\n");
+    printf("%-30s","Copy File:"); printf("'copyfile <source file path> <destination directory path>'\n");
+    printf("%-30s","Move File:"); printf("'movefile <source file path> <destination directory path>'\n");
     printf("%-30s","Set File Permission:"); printf("'chmod <file path> <file permission>'\n");
     printf("\n");
-    printf("%-30s","Copy From Linux Filesystem:"); printf("'TODO~'\n");
-    printf("%-30s","Copy From This Filesystem:"); printf("'TODO~'\n");
+    printf("%-30s","Copy From Linux Filesystem:"); printf("'copyfrom <source file path> <destination file path>'\n");
+    printf("%-30s","Copy To Linux Filesystem:"); printf("'copyto <source file path> <destination file path>'\n");
     printf("\n");
     printf("%-30s","See Commands Again:"); printf("'commands' or 'c'\n");
     printf("%-30s","Clear Console:"); printf("'clear'\n");
     printf("%-30s","Exit:"); printf("'exit' or 'e'\n");
     printf("-------------------------------------------------------------------------------\n\n");
 }
-
-//void printCommandsOLD(){
-//    printf("-------------------------------------------------------\n");
-//    printf("List Directories: 'ls'\n");
-//    printf("List Tree: 'tree'\n");
-//    printf("Change Directories: 'cd <directory path>' or 'cd ..'\n");
-//    printf("Display Working Directory: 'pwd'\n");
-//    printf("Display Directory Information: 'info <directory path>'\n");
-//    printf("Create Directoty: 'mkdir <directory name>'\n");
-//    printf("Make File: 'mkfile <file name> <file extension> <file size in bytes>'\n");
-//    printf("Remove File: 'rmfile <file name>\n");
-//    printf("Copy File: 'cpyfile <file path> <destination directory path>'\n");
-//    printf("Move File: 'mvfile <file path> <destination directory path>'\n");
-//    printf("Move Directory: 'mvdir <file path> <destination directory path>'\n");
-//    printf("Set File Permission: 'chmod <file path> <file permission>'\n");
-//    printf("Copy From Linux Filesystem: 'TODO!'\n");
-//    printf("Copy From This Filesystem: 'TODO'\n");
-//    printf("See Commands Again: 'commands' or 'c'\n");
-//    printf("Clear Console: 'clear'\n");
-//    printf("Exit: 'exit' or 'e'\n");
-//    printf("-------------------------------------------------------\n\n");
-//}
 
 void initializeVolumeControlBlock(uint64_t volumeSize, char *volumeName, uint16_t blockSize) {
     // Allocate memory for struct
@@ -593,7 +571,7 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
     return dirBlockLocation;
 }
 
-uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
+uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileSize, uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
     // Create temp directory, which will be written to file system
     struct directoryEntry *tempDir = malloc(blockSize);
     
@@ -603,11 +581,11 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t paren
     tempDir->permissions = 644; // Default permission
     tempDir->dateCreated = (unsigned int)time(NULL);
     tempDir->dateModified = (unsigned int)time(NULL);
-    tempDir->fileSize = 0;
+    tempDir->fileSize = fileSize;
     tempDir->parentDirectory = parentDirectoryBlockNumber;
     
     // Calculate number of blocks needed for this file
-    //int numberOfBlocksNeeded = (int)((fileSize / blockSize) + 1);
+    int numberOfBlocksNeeded = (int)((fileSize / blockSize) + 1);
     
     // Find open block to write this directory to
     uint64_t dirBlockLocation = findSingleFreeLBABlockInRange(51, 99, blockSize);
@@ -617,19 +595,19 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t paren
     
     // Create array to store free blocks. These blocks will be used to store the actual 'contents' of the file
     // Make sure to look starting at block 100, since everything before that is used by the file system
-    //uint64_t *freeBlocks = findFreeLBABlocksInRange(100, getHighestUseableBlock(blockSize), numberOfBlocksNeeded, blockSize);
+    uint64_t *freeBlocks = findFreeLBABlocksInRange(100, getHighestUseableBlock(blockSize), numberOfBlocksNeeded, blockSize);
     
     // Set the indexLocations to 0, so we know that this are has been wiped clean
     memset(tempDir->indexLocations, 0x00, (sizeof(tempDir->indexLocations)/sizeof(tempDir->indexLocations[0])));
     
     // Assign the block we set aside to these index locations
     // Also set all the index blocks that this file will need to used
-    /*
+
     for (int i = 0; i < numberOfBlocksNeeded; i++) {
         tempDir->indexLocations[i] = freeBlocks[i];
         setBlockAsUsed(freeBlocks[i], blockSize);
     }
-    */
+     
     // Print info
     printf("CREATING NEW FILE...\n");
     printf("File Name: %s\n", tempDir->name);
@@ -637,7 +615,6 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t paren
     printf("File Size: %llu bytes\n", tempDir->fileSize);
     printf("File Permissions: %hu\n", tempDir->permissions);
     printf("File Creation Date: %u\n", tempDir->dateCreated);
-    //printf("Number of Blocks Reserved for File: %d\n", numberOfBlocksNeeded);
     printf("Directory Location: %llu\n", tempDir->blockLocation);
     printf("Parent Directory location: %llu\n\n", tempDir->parentDirectory);
     
@@ -655,7 +632,7 @@ uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t paren
     
     // Cleanup
     free(tempDir);
-    //free(freeBlocks);
+    free(freeBlocks);
     
     // Return the block location of this new file directory
     return dirBlockLocation;
@@ -1162,10 +1139,10 @@ void sampleCreateDirectories(int16_t blockSize) {
         // Create sub pictures directories
         uint64_t hawaiiLocation = createDirectory("Hawaii", picturesLocation, blockSize);
             // Create sub hawaii files
-            createFileDirectory("familyPic", "png", hawaiiLocation, blockSize);
-            createFileDirectory("sunset", "png", hawaiiLocation, blockSize);
+            createFileDirectory("familyPic", "png", 343, hawaiiLocation, blockSize);
+            createFileDirectory("sunset", "png", 667, hawaiiLocation, blockSize);
             createDirectory("HotelPictures", hawaiiLocation, blockSize);
-            createFileDirectory("oncean", "jpg", hawaiiLocation, blockSize);
+            createFileDirectory("oncean", "jpg", 536, hawaiiLocation, blockSize);
         createDirectory("NewYears2019", picturesLocation, blockSize);
     
     // Create documents directory
@@ -1173,8 +1150,8 @@ void sampleCreateDirectories(int16_t blockSize) {
         // Create sub document directories
         uint64_t identificationLocation = createDirectory("Identifications", documentsLocation, blockSize);
             // Create sub identification files
-            createFileDirectory("socialSecurityCard", "pdf", identificationLocation, blockSize);
-            createFileDirectory("driversLicense", "png", identificationLocation, blockSize);
+            createFileDirectory("socialSecurityCard", "pdf", 534, identificationLocation, blockSize);
+            createFileDirectory("driversLicense", "png", 993, identificationLocation, blockSize);
         createDirectory("LegalPaperwork", documentsLocation, blockSize);
     
     // Create videos directory
@@ -1184,6 +1161,9 @@ void sampleCreateDirectories(int16_t blockSize) {
 }
 
 void exitFileSystem(int16_t blockSize) {
+    // Extends visibility from main function. This allows us to access it without having to pass it in every time
+    extern struct openFileDirectory *openFileList;
+    
     // Print Info
     printf("CLOSING AND EXITING FILE SYSTEM...\n");
     
@@ -1369,5 +1349,265 @@ uint64_t removeChildFromParent(uint64_t parentDirectoryBlockNumber, uint64_t chi
     free(tempDir);
     
     // Return failure
+    return 0;
+}
+
+
+int myFsOpen (uint64_t fileBlockLocation, int method, uint16_t blockSize, struct openFileDirectory *openFileList) {
+    // Keeps track of which element in the open file array we are going to use for this file
+    int fd = 0;
+    
+    // Iterate through open file list until we find a slot to open a new file
+    for (int i = 0; i < FDOPENMAX; i++) {
+        if (openFileList[i].flags == FDOPENFREE) {
+            fd = i;
+            break;
+        }
+        // If we check all the openFileDirectories and none are free, then file cannot be opened
+        else if (i == (FDOPENMAX - 1)) {
+            printf("Cannot Open File. Too Many Files Open Currently\n\n");
+            return -1;
+        }
+    }
+    
+    // Save file directory entry
+    struct directoryEntry *fileDir = getDirectoryEntryFromBlock(fileBlockLocation, blockSize);
+    
+    // Set directory block of this file
+    openFileList[fd].directoryEntryLocation = fileDir->blockLocation;
+    
+    // Set file size of this file
+    openFileList[fd].size = fileDir->fileSize;
+    
+    // Sets the file to be in use, for both read and write
+    openFileList[fd].flags = FDOPENINUSE | FDOPENFORREAD | FDOPENFORWRITE;
+    
+    // Set the buffer to have 1 block size's worth
+    openFileList[fd].fileBuffer = malloc(blockSize);
+    
+    // Set the pointer to start of the file
+    openFileList[fd].pointer = 0;
+    
+    // Cleanup
+    free (fileDir);
+    
+    return fd;
+}
+
+int myFsClose(int fd, struct openFileDirectory *openFileList) {
+    // Make sure fd is a valid number
+    if ( fd >= FDOPENMAX) {
+        return -1;
+    }
+    
+    // Make sure file is in use
+    if ((openFileList[fd].flags & FDOPENINUSE) != FDOPENINUSE) {
+        return -1;
+    }
+    
+    // Free buffer
+    free(openFileList[fd].fileBuffer);
+    
+    // Set back values to default
+    openFileList[fd].pointer = 0;
+    openFileList[fd].size = 0;
+    openFileList[fd].directoryEntryLocation = 0;
+    openFileList[fd].flags = FDOPENFREE;
+    
+    return 1;
+}
+
+uint64_t myFsSeek(int fd, uint64_t position, int method, struct openFileDirectory *openFileList) {
+    // Make sure fd is a valid number
+    if ( fd >= FDOPENMAX) {
+        return -1;
+    }
+    
+    // Make sure file is in use
+    if ((openFileList[fd].flags & FDOPENINUSE) != FDOPENINUSE) {
+        return -1;
+    }
+    
+    switch (method) {
+        case MYSEEK_CUR:
+            openFileList[fd].pointer += position;
+            break;
+            
+        case MYSEEK_POS:
+            openFileList[fd].pointer = position;
+            break;
+            
+        case MYSEEK_END:
+            openFileList[fd].pointer = openFileList[fd].size - position;
+            break;
+        
+        default:
+            break;
+    }
+    
+    return (openFileList[fd].pointer);
+}
+
+uint64_t myFsWrite(int fd, char * src, uint64_t length, uint16_t blockSize, struct openFileDirectory *openFileList) {
+    // Make sure fd is a valid number
+    if ( fd >= FDOPENMAX) {
+        return -1;
+    }
+    
+    // Make sure file is in use
+    if ((openFileList[fd].flags & FDOPENINUSE) != FDOPENINUSE) {
+        return -1;
+    }
+    
+    return myFsWriteHelper(fd, src, length, 0, blockSize, openFileList);
+}
+
+uint64_t myFsWriteHelper(int fd, char * src, uint64_t length, uint64_t srcPosition, uint16_t blockSize, struct openFileDirectory *openFileList) {
+    // Find out which LBA block we are are reffering too
+    uint64_t currentBlock = openFileList[fd].pointer / blockSize;
+    
+    // Find the offset of that block
+    uint64_t currentOffset = openFileList[fd].pointer % blockSize;
+    
+    // If the buffer still has space for what were writting, simply add src to buffer
+    uint64_t totalBytesToWrite = length - srcPosition;
+    if (currentOffset + totalBytesToWrite <= blockSize) {
+        // Add src to buffer
+        memcpy(openFileList[fd].fileBuffer + currentOffset, (src + srcPosition), totalBytesToWrite);
+        
+        // Update pointer location
+        openFileList[fd].pointer += totalBytesToWrite;
+        
+        // Return new pointer location
+        return openFileList[fd].pointer;
+    }
+    // When the buffer does not have space, FILL as much as we can, then write it. Then call this function recursivly until we write everything we need to
+    else {
+        
+        // Write AS MUCH AS WE CAN to the buffer
+        uint64_t numBytesToWrite = (int)(blockSize - currentOffset);
+        memcpy(openFileList[fd].fileBuffer + currentOffset, (src + srcPosition), numBytesToWrite);
+        
+        // Update pointer location
+        openFileList[fd].pointer += numBytesToWrite;
+        
+        // Get directory entry of the file we are writing to
+        struct directoryEntry *dir = getDirectoryEntryFromBlock(openFileList[fd].directoryEntryLocation, blockSize);
+        
+        // LBAwrite the buffer to the correct index LBA block
+        LBAwrite(openFileList[fd].fileBuffer, 1, dir->indexLocations[currentBlock]);
+        
+        // Clear the buffer
+        free(openFileList[fd].fileBuffer);
+        
+        // Cleanup
+        free(dir);
+        
+        // Call fsWriteHelper again, this time with an update scrPosition, since we are further along in src
+        return myFsWriteHelper(fd, src, length, (srcPosition + numBytesToWrite), blockSize, openFileList);
+    }
+}
+
+uint64_t myFsRead(int fd, char * src, uint64_t length, uint64_t bytesAlreadyRead, uint16_t blockSize, struct openFileDirectory *openFileList) {
+    // Make sure fd is a valid number
+    if ( fd >= FDOPENMAX) {
+        return -1;
+    }
+    
+    // Make sure file is in use
+    if ((openFileList[fd].flags & FDOPENINUSE) != FDOPENINUSE) {
+        return -1;
+    }
+    
+    return myFsWriteHelper(fd, src, length, 0, blockSize, openFileList);
+}
+
+uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlreadyRead, uint16_t blockSize, struct openFileDirectory *openFileList) {
+    // Find out which LBA block we are are reffering too
+    uint64_t currentBlock = openFileList[fd].pointer / blockSize;
+    
+    // Find the offset of that block
+    uint64_t currentOffset = openFileList[fd].pointer % blockSize;
+    
+    // If we can read what we need, WITHOUT going to the next block, simply read and return
+    uint64_t totalBytesToRead = length - bytesAlreadyRead;
+    if (currentOffset + totalBytesToRead <= blockSize) {
+        // Pull entire LBA block
+        void *block = malloc(blockSize);
+        LBAread(block, 1, currentBlock);
+        
+        // Copy what we need from LBA block into src
+        memcpy((src + bytesAlreadyRead), (block + currentOffset), totalBytesToRead);
+        
+        // Update pointer location
+        openFileList[fd].pointer += totalBytesToRead;
+        
+        // Cleanup
+        free (block);
+        
+        // Return new pointer location
+        return openFileList[fd].pointer;
+    }
+    // When we need to read something between blocks, we will do it recursively
+    else {
+        // Calculate number of bytes we will read from this block
+        uint64_t numBytesToRead = (int)(blockSize - currentOffset);
+        
+        // Pull entire LBA block
+        void *block = malloc(blockSize);
+        LBAread(block, 1, currentBlock);
+        
+        // Copy what we need from LBA block into src
+        memcpy((src + bytesAlreadyRead), (block + currentOffset), numBytesToRead);
+        
+        // Cleanup
+        free (block);
+        
+        // Update pointer location
+        openFileList[fd].pointer += numBytesToRead;
+        
+        // Call fsReadHelper again, this time with an update bytesAlreadyRead, since we are further along in src
+        return myFsWriteHelper(fd, src, length, (bytesAlreadyRead + numBytesToRead), blockSize, openFileList);
+    }
+}
+
+int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, struct openFileDirectory *openFileList) {
+    // Open linux file
+    FILE *sourceFile = fopen(sourcePath, "r");
+    if (sourceFile == NULL) {
+        printf("Unable To Copy From Linux. Source File Does Not Exist.\n");
+        return -1;
+    }
+    
+    // Save linux file size
+    fseek(sourceFile, 0L, SEEK_END);
+    uint64_t linuxFileSize = ftell(sourceFile);
+    fseek(sourceFile, 0L, SEEK_SET);
+    
+    // Save original directory
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
+    
+    // CD to directory
+    int returnStat = changeDirectory(destinationPath, 1, blockSize);
+    if (returnStat < 0)
+    {
+        printf("Destination Path Not Valid.\n\n");
+        return -1;
+    }
+    
+    // Save parent location
+    uint64_t parentLocation = getVCBCurrentDirectory(blockSize);
+    
+    // Change back to original directory
+    setVCBCurrentDirectory(originalDirectory, blockSize);
+    
+    // Create a new file
+    uint64_t newFileBlockLocation = createFileDirectory("TESTCOPY", "txt", linuxFileSize, parentLocation, blockSize);
+    
+    // Open our system file
+    int destinationFileFD = myFsOpen(newFileBlockLocation, -1, blockSize, openFileList);
+    
+    // TODO: FINISH THIS FUNCTION
+    
     return 0;
 }

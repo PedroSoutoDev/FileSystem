@@ -92,6 +92,9 @@ int main (int argc, char *argv[]) {
     // Set the current directory back to the root at launch
     setVCBCurrentDirectory(getVCBRootDirectory(blockSize), blockSize);
     
+    // Create array for all open files
+    struct openFileDirectory * openFileList = malloc((sizeof(openFileList) * FDOPENMAX));
+    
     // Main loop of program, where we ask for user input then execute t that functionality
     char userInput[BUFFERSIZE];
     char *argList[BUFFERSIZE];

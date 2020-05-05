@@ -32,6 +32,18 @@
 #define USER_WRITE 0x0016
 #define USER_READ 0x0018
 
+// Flags for openDirectory Struct
+#define FDOPENINUSE 0x00000001
+#define FDOPENFREE 0x00000002
+#define FDOPENMAX 50
+#define FDOPENFORWRITE 0x00000010
+#define FDOPENFORREAD 0x00000020
+
+// Seek method
+#define MYSEEK_CUR 1
+#define MYSEEK_POS 2
+#define MYSEEK_END 3
+
 /*
  Total space used by Volume Control Block: 592 bits - 74 bytes
  Volume control block should be <= 512 bytes, in order to fit into an LBA block
@@ -147,4 +159,12 @@ struct directoryEntry {
     // * Each element is 64 bits [0, 18,446,744,073,709,551,615]                                                               *
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
     uint64_t indexLocations[54];
+};
+
+struct openFileDirectory {
+    int flags;
+    uint64_t pointer;
+    uint64_t size;
+    uint64_t directoryEntryLocation;
+    char * fileBuffer;
 };
