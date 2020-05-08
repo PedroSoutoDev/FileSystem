@@ -24,8 +24,9 @@
 // Group Files
 #include "inputParser.h"
 #include "fsImplementation.h"
+#include "fsStructures.h"
 
-void executeCommand (int argc, char *argv[], uint64_t blockSize) {
+void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFileDirectory *openFileList) {
     // Find the corresponding command, and call its proper execute function
     if(strcmp(argv[0],"ls") == 0) {
         listDirectories(getVCBCurrentDirectory(blockSize), blockSize);
@@ -105,7 +106,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         setMetaData(argv[1], atoi(argv[2]), blockSize);
     }
     else if (strcmp(argv[0],"copyfrom") == 0) {
-        //TODO: IMPLEMENT
+        copyFromLinux(argv[1], argv[2], blockSize, openFileList);
     }
     else if (strcmp(argv[0],"copyto") == 0) {
         //TODO: IMPLEMENT

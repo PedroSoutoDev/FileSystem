@@ -44,6 +44,8 @@
 // Default name for the partition
 #define PARTITION_NAME "Pedro's HDD"
 
+void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFileDirectory *openFileList);
+
 int main (int argc, char *argv[]) {
     // Ensure the correct number of arguments
     // argv[0]: Program Name
@@ -95,6 +97,10 @@ int main (int argc, char *argv[]) {
     // Create array for all open files
     struct openFileDirectory * openFileList = malloc((sizeof(openFileList) * FDOPENMAX));
     
+    //set all flags to free space
+    for (int i = 0; i < FDOPENMAX; i++) {
+        openFileList[i].flags = FDOPENFREE;
+    }
     // Main loop of program, where we ask for user input then execute t that functionality
     char userInput[BUFFERSIZE];
     char *argList[BUFFERSIZE];
@@ -132,7 +138,7 @@ int main (int argc, char *argv[]) {
         
         // Check if the command is valid. If it is, execute the command
         if (userInputIsValid(argc, argList)) {
-            executeCommand(argc, argList , blockSize);
+            executeCommand(argc, argList , blockSize, openFileList);
         }
     }
 }

@@ -1607,7 +1607,24 @@ int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize,
     // Open our system file
     int destinationFileFD = myFsOpen(newFileBlockLocation, -1, blockSize, openFileList);
     
-    // TODO: FINISH THIS FUNCTION
+    // create a buffer to store the linux file.
+    char * src = malloc(sizeof(linuxFileSize));
+    char ch;
+    while( ( ch = fgetc(sourceFile) ) != EOF )
+    {
+        for (int i = 0; i < (char)linuxFileSize; i++)
+        {
+            src[i] = ch;
+        }
+    }
+
+    myFsWrite(destinationFileFD, src, linuxFileSize, blockSize, openFileList);
+
+
+    free(src);
+    fclose(sourceFile);
+    myFsClose(destinationFileFD, openFileList);
     
     return 0;
 }
+
