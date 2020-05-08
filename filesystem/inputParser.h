@@ -28,4 +28,4 @@ int userInputIsValid (int argc, char *argv[]);
 
 // Takes in a command list, and executes the command
 // This function should only be called when the command/arguments have been validated by userInputIsValid()
-void executeCommand (int argc, char *argv[], uint64_t blockSize);
+//void executeCommand (int argc, char *argv[], uint64_t blockSize);
