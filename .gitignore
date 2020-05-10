@@ -1,4 +1,11 @@
+# Do not track Mac OS preferences
 .DS_Store
 
-filesystem.xcodeproj
-FILE1/*
+# Do not track Xcode project
+*.xcodeproj
+
+# Do not track object files
+fsImplementation.o
+fsLow.o
+fsdriver3.o
+inputParser.o
