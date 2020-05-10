@@ -303,7 +303,7 @@ void listDirectories(uint64_t parentDirectoryBlockNumber, uint16_t blockSize) {
         
         // If the directory is a file, print the file name and extension
         if (strcmp(tempDir->fileExtension, DIRECTORY_EXTENSION_NAME) != 0) {
-            printf("◉ %s.%s\n", tempDir->name, tempDir->fileExtension);
+            printf("    ◉ %s.%s\n", tempDir->name, tempDir->fileExtension);
         }
         
         // Cleanup temp directory

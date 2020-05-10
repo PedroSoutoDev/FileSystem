@@ -38,23 +38,24 @@
 #include "inputParser.h"
 #include "fsImplementation.h"
 
-// Maximum size of user command input
-#define BUFFERSIZE 128
+// Size of file system partition (5MB default)
+#define VOLUME_SIZE 5000000
+
+// Size of LBA block (512 default)
+#define LBA_BLOCK_SIZE 512
 
 // Default name for the partition
 #define PARTITION_NAME "Pedro's HDD"
+
+// Maximum size of user command input
+#define INPUT_BUFFER_SIZE 128
 
 int main (int argc, char *argv[]) {
     // Ensure the correct number of arguments
     // argv[0]: Program Name
     // argv[1]: File Name
-    // argv[2]: Volume Size
-    // argv[3]: Block Size
-    if (argc != 4) {
-        printf("In correct number of parameters. Please use the following parameters:\n");
-        printf("argv[1]: File Name\n");
-        printf("argv[2]: Volume Size\n");
-        printf("argv[3]: Block Size\n");
+    if (argc != 2) {
+        printf("Incorrect number of parameters. Please use only ONE parameters: File Path\n");
         exit(1);
     }
     
@@ -62,8 +63,8 @@ int main (int argc, char *argv[]) {
     printf("---------------------------------------------------------------------------------------------\n");
     printf("OPENING FILE SYSTEM...\n");
     char * filename = argv[1];
-    uint64_t volumeSize = atoll (argv[2]);
-    uint64_t blockSize = atoll (argv[3]);
+    uint64_t volumeSize = VOLUME_SIZE;
+    uint64_t blockSize = LBA_BLOCK_SIZE;
     int startPartitionReturn = startPartitionSystem (filename, &volumeSize, &blockSize);
 
     // Make sure partition was successfully create/opened
@@ -71,7 +72,7 @@ int main (int argc, char *argv[]) {
         printf("FILE SYSTEM OPENED SUCSESSFULLY!\n");
     } else {
         printf("ERROR OPENING FILE SYSTEM!\n");
-        exit(1);
+        exit(-1);
     }
     printf("---------------------------------------------------------------------------------------------\n\n");
 
@@ -84,36 +85,37 @@ int main (int argc, char *argv[]) {
         createDefaultDirectories(blockSize);
     }
     
-    // Set the current directory back to the root at launch
+    // Set the current directory to the root directory at launch
     setVCBCurrentDirectory(getVCBRootDirectory(blockSize), blockSize);
     
     // Create array for all open files
     struct openFileDirectory * openFileList = (struct openFileDirectory *)malloc(sizeof(struct openFileDirectory) * FDOPENMAX);
     
-    // check if memory allocated
+    // Check if memory allocated correctly
     if (openFileList == NULL) {
-      printf("Unable to allocate memory space. Program terminated.\n");
-      return -1;
+        printf("Unable to allocate memory space. Program terminated.\n");
+        exit(-1);
     }
     
-    //set all flags to free space open
+    // Set flag to free for the files in openFileList, since there are on open files on launch
     for (int i = 0; i < FDOPENMAX; i++) {
         openFileList[i].flags = FDOPENFREE;
     }
     
-    // Main loop of program, where we ask for user input then execute t that functionality
-    char userInput[BUFFERSIZE];
-    char *argList[BUFFERSIZE];
-    char *token;
     // On launch, label and print commands
     printf("*** COMMANDS ***\n");
     printCommands();
+    
+    // Main loop which takes user input, then executes the correct file system functionality
+    char userInput[INPUT_BUFFER_SIZE];
+    char *argList[INPUT_BUFFER_SIZE];
+    char *token;
     while (1) {
         // Print prompt
         printf("> ");
         
         // Get user input
-        fgets(userInput, BUFFERSIZE, stdin);
+        fgets(userInput, INPUT_BUFFER_SIZE, stdin);
         
         // Override the last char of input to be a null-terminator
         userInput[strlen(userInput) - 1] = '\0';
@@ -126,9 +128,6 @@ int main (int argc, char *argv[]) {
             argc++;
             token = strtok(NULL, " ");
         }
-        
-        // Set the element after the last element to null, so we know when to stop looking for more arguments
-        argList[argc] = NULL;
         
         // If the user did not enter anything or they entered too many things, consider input invalid
         if (argc <= 0 || argc > 5) {
