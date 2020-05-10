@@ -109,7 +109,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFile
         copyFromLinux(argv[1], argv[2], blockSize, openFileList);
     }
     else if (strcmp(argv[0],"copyto") == 0) {
-        //TODO: IMPLEMENT
+        copyToLinux(argv[1], argv[2], blockSize, openFileList);
     }
     else if (strcmp(argv[0],"commands") == 0 || strcmp(argv[0],"C") == 0 || strcmp(argv[0],"Commands") == 0 || strcmp(argv[0],"C") == 0) {
         printCommands();
