@@ -75,24 +75,16 @@ uint64_t createDirectory(char* directoryName, uint64_t parentDirectoryBlockNumbe
 void createRootDirectory(uint16_t blockSize);
 
 // Add file
-uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
+uint64_t createFileDirectory(char* fileName, char* fileExtension, uint64_t fileSize, uint64_t parentDirectoryBlockNumber, uint16_t blockSize);
 
 // Remove file
 int removeFile(char * filePath, uint16_t blockSize);
-
-// Copy file
-
-// Move file
 
 // Set metadata
 void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSize);
 
 // Print metadata
 void printDirectoryInfo(char* directoryPath, uint16_t blockSize);
-
-// Copy from the normal filesystem to your filesystem
-
-// Copy from your filesystem to the normal filesystem
 
 // Initialize control block (block 0)
 void initializeVolumeControlBlock(uint64_t volumeSize, char *volumeName, uint16_t blockSize);
@@ -176,10 +168,22 @@ uint64_t getHighestUseableBlock(int16_t blockSize);
 void sampleCreateDirectories(int16_t blockSize);
 
 // Properly closes and exits the file system
-void exitFileSystem(int16_t blockSize);
+void exitFileSystem(int16_t blockSize, struct openFileDirectory * openFileList);
 
 uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize);
 
 int moveDirectory(char * srcPath, char * tarPath, uint16_t blockSize);
 
 uint64_t removeChildFromParent(uint64_t parentDirectoryBlockNumber, uint64_t childBlockNumber, uint16_t blockSize);
+
+int myFsOpen (uint64_t fileBlockLocation, int method, uint16_t blockSize, struct openFileDirectory *openFileList);
+
+int myFsClose(int fd, uint16_t blockSize, struct openFileDirectory *openFileList);
+
+uint64_t myFsSeek(int fd, uint64_t position, int method, struct openFileDirectory *openFileList);
+
+uint64_t myFsWrite(int fd, char * src, uint64_t length, uint16_t blockSize, struct openFileDirectory *openFileList);
+
+uint64_t myFsWriteHelper(int fd, char * src, uint64_t length, uint64_t writePosition, uint16_t blockSize, struct openFileDirectory *openFileList);
+
+int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, struct openFileDirectory *openFileList);

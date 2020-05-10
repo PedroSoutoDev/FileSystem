@@ -22,10 +22,11 @@
 #include <ctype.h>
 
 // Group Files
+#include "fsStructures.h"
 #include "inputParser.h"
 #include "fsImplementation.h"
 
-void executeCommand (int argc, char *argv[], uint64_t blockSize) {
+void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFileDirectory *openFileList) {
     // Find the corresponding command, and call its proper execute function
     if(strcmp(argv[0],"ls") == 0) {
         listDirectories(getVCBCurrentDirectory(blockSize), blockSize);
@@ -47,7 +48,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
     else if (strcmp(argv[0],"info") == 0) {
         printDirectoryInfo(argv[1], blockSize);
     }
-    else if (strcmp(argv[0],"mkdir") == 0) {
+    else if (strcmp(argv[0],"makedir") == 0) {
         // Make sure that directory name does not contain improper characters
         for (int i = 0; i < strlen(argv[1]) ; i++) {
             // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
@@ -58,7 +59,11 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         }
         createDirectory(argv[1], getVCBCurrentDirectory(blockSize), blockSize);
     }
-    else if (strcmp(argv[0],"mkfile") == 0) {
+    
+    else if (strcmp(argv[0],"movedir") == 0 || strcmp(argv[0],"mvfile") == 0) {
+        moveDirectory(argv[1], argv[2], blockSize);
+    }
+    else if (strcmp(argv[0],"makefile") == 0) {
         // Make sure that file name does not contain improper characters
         for (int i = 0; i < strlen(argv[1]) ; i++) {
             // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
@@ -76,24 +81,13 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
                 return;
             }
         }
-        /*// Make sure that the file size argument is a number
-        for (int i = 0; i < strlen(argv[3]) ; i++) {
-            // Check if the ASCII value is between 48 and 57, which corresponds to 0-9
-            if (argv[3][i] < 48 || argv[3][i] > 57) {
-                printf("Invalid Argument. File Size Must Be a Number.\n\n");
-                return;
-            }
-        }*/
-        createFileDirectory(argv[1], argv[2], getVCBCurrentDirectory(blockSize), blockSize);
+        createFileDirectory(argv[1], argv[2], 0, getVCBCurrentDirectory(blockSize), blockSize);
     }
-    else if(strcmp(argv[0],"rmfile") == 0) {
+    else if(strcmp(argv[0],"removefile") == 0) {
         removeFile(argv[1], blockSize);
     }
-    else if (strcmp(argv[0],"cpyfile") == 0) {
+    else if (strcmp(argv[0],"copyfile") == 0) {
         copyFile(argv[1], argv[2], blockSize);
-    }
-    else if (strcmp(argv[0],"mvdir") == 0 || strcmp(argv[0],"mvfile") == 0) {
-        moveDirectory(argv[1], argv[2], blockSize);
     }
     else if (strcmp(argv[0],"chmod") == 0) {
         // Make sure that the permission argument is a number
@@ -111,6 +105,15 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         }
         setMetaData(argv[1], atoi(argv[2]), blockSize);
     }
+    else if (strcmp(argv[0],"copyfrom") == 0) {
+        copyFromLinux(argv[1], argv[2], blockSize, openFileList);
+    }
+    else if (strcmp(argv[0],"copyto") == 0) {
+        //TODO: IMPLEMENT
+    }
+    else if (strcmp(argv[0],"commands") == 0 || strcmp(argv[0],"C") == 0 || strcmp(argv[0],"Commands") == 0 || strcmp(argv[0],"C") == 0) {
+        printCommands();
+    }
     else if (strcmp(argv[0],"clear") == 0) {
         //TODO: Clear console
         printf("Clearing console. This May Not Work - Depends On The Terminal You Are Using.\n");
@@ -118,10 +121,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize) {
         printf("\n\n");
     }
     else if (strcmp(argv[0],"exit") == 0 || strcmp(argv[0],"e") == 0 || strcmp(argv[0],"Exit") == 0 || strcmp(argv[0],"E") == 0) {
-        exitFileSystem(blockSize);
-    }
-    else if (strcmp(argv[0],"commands") == 0 || strcmp(argv[0],"C") == 0 || strcmp(argv[0],"Commands") == 0 || strcmp(argv[0],"C") == 0) {
-        printCommands();
+        exitFileSystem(blockSize, openFileList);
     }
 }
 
@@ -133,15 +133,15 @@ int userInputIsValid (int argc, char *argv[]) {
         "cd",
         "pwd",
         "info",
-        "mkdir",
-        "mkfile",
-        "rmfile",
-        "cpyfile",
-        "mvfile",
-        "mvdir",
+        "makedir",
+        "makefile",
+        "removefile",
+        "copyfile",
+        "movefile",
+        "movedir",
         "chmod",
-        "TODO: Copy from the normal filesystem to this filesystem",
-        "TODO: Copy from this filesystem to the normal filesystem",
+        "copyfrom",
+        "copyto",
         "clear",
         "commands",
         "c",
@@ -167,9 +167,9 @@ int userInputIsValid (int argc, char *argv[]) {
         2,  // mvfile
         2,  // mvdir
         2,  // setdata
-        99, // TODO: Copy from the normal filesystem to this filesystem
-        99, // TODO: Copy from this filesystem to the normal filesystem
-        0,  //
+        2,  // copyfrom
+        2,  // copyto
+        0,  // clear
         0,  // commands
         0,  // c
         0,  // Commands

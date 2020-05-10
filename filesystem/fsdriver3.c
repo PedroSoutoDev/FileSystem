@@ -35,8 +35,8 @@
 
 // Group Files
 #include "fsStructures.h"
-#include "fsImplementation.h"
 #include "inputParser.h"
+#include "fsImplementation.h"
 
 // Maximum size of user command input
 #define BUFFERSIZE 128
@@ -92,6 +92,20 @@ int main (int argc, char *argv[]) {
     // Set the current directory back to the root at launch
     setVCBCurrentDirectory(getVCBRootDirectory(blockSize), blockSize);
     
+    // Create array for all open files
+    struct openFileDirectory * openFileList = (struct openFileDirectory *)malloc(sizeof(struct openFileDirectory) * FDOPENMAX);
+    
+    // check if memory allocated
+    if (openFileList == NULL) {
+      printf("Unable to allocate memory space. Program terminated.\n");
+      return -1;
+    }
+    
+    //set all flags to free space open
+    for (int i = 0; i < FDOPENMAX; i++) {
+        openFileList[i].flags = FDOPENFREE;
+    }
+    
     // Main loop of program, where we ask for user input then execute t that functionality
     char userInput[BUFFERSIZE];
     char *argList[BUFFERSIZE];
@@ -129,7 +143,7 @@ int main (int argc, char *argv[]) {
         
         // Check if the command is valid. If it is, execute the command
         if (userInputIsValid(argc, argList)) {
-            executeCommand(argc, argList , blockSize);
+            executeCommand(argc, argList , blockSize, openFileList);
         }
     }
 }
