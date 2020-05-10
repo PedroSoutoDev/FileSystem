@@ -184,6 +184,12 @@ uint64_t myFsSeek(int fd, uint64_t position, int method, struct openFileDirector
 
 uint64_t myFsWrite(int fd, char * src, uint64_t length, uint16_t blockSize, struct openFileDirectory *openFileList);
 
+uint64_t myFsRead(int fd, char * src, uint64_t length, uint16_t blockSize, struct openFileDirectory *openFileList);
+
 uint64_t myFsWriteHelper(int fd, char * src, uint64_t length, uint64_t writePosition, uint16_t blockSize, struct openFileDirectory *openFileList);
 
+uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlreadyRead, uint16_t blockSize, struct openFileDirectory *openFileList);
+
 int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, struct openFileDirectory *openFileList);
+
+int copyToLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, struct openFileDirectory *openFileList);
