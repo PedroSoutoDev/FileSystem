@@ -87,13 +87,16 @@ void setMetaData(char* directoryPath, uint16_t newPermissions, uint16_t blockSiz
 void printDirectoryInfo(char* directoryPath, uint16_t blockSize);
 
 // Initialize control block (block 0)
-void initializeVolumeControlBlock(uint64_t volumeSize, char *volumeName, uint16_t blockSize);
+void initializeVolumeControlBlock(uint64_t volumeSize, char *filename, char *volumeName, uint16_t blockSize);
 
 // Returns the block in which the root directory structe is at
 uint64_t getVCBRootDirectory(uint16_t blockSize);
 
 // Returns the block of where our current directory is at
 uint64_t getVCBCurrentDirectory(uint16_t blockSize);
+
+// Returns the name of the file system
+char* getVCBFileSystemName(uint16_t blockSize);
 
 // * DO NOT CALL THIS *
 // Set the current directory block to this new directory. It will be auto called in changeDirectory()
@@ -165,7 +168,7 @@ void setBlockAsUsed(uint64_t blockNumber, int16_t blockSize);
 uint64_t getHighestUseableBlock(int16_t blockSize);
 
 // Create DUMMY DATA for testing (adding, printing, removing, etc...)
-void sampleCreateDirectories(int16_t blockSize);
+void createDefaultDirectories(int16_t blockSize);
 
 // Properly closes and exits the file system
 void exitFileSystem(int16_t blockSize, struct openFileDirectory * openFileList);
@@ -193,3 +196,6 @@ uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlrea
 int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, struct openFileDirectory *openFileList);
 
 int copyToLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, struct openFileDirectory *openFileList);
+
+// Formats the file sytem. This will erase the text-file that the filesystem is on
+void formatFileSystem(uint16_t blocksize);
