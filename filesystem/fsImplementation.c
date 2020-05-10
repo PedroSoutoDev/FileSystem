@@ -1160,9 +1160,9 @@ void sampleCreateDirectories(int16_t blockSize) {
         createDirectory("Animations", videosLocation, blockSize);
 }
 
-void exitFileSystem(int16_t blockSize) {
+void exitFileSystem(int16_t blockSize, struct openFileDirectory * openFileList ) {
     // Extends visibility from main function. This allows us to access it without having to pass it in every time
-    extern struct openFileDirectory *openFileList;
+    //extern struct openFileDirectory *openFileList;
     
     // Print Info
     printf("CLOSING AND EXITING FILE SYSTEM...\n");
@@ -1172,7 +1172,14 @@ void exitFileSystem(int16_t blockSize) {
     
     // Close the partition
     closePartitionSystem();
-
+    
+    /*
+    for (int i = 0; i < FDOPENMAX; i++)
+        free(* openFileList[i]);
+    
+    free(openFileList);
+    */
+    
     // Print success messages
     printf("FILE SYSTEM CLOSED SUCCESSFULLY!\n\n");
     
@@ -1383,7 +1390,13 @@ int myFsOpen (uint64_t fileBlockLocation, int method, uint16_t blockSize, struct
     openFileList[fd].flags = FDOPENINUSE | FDOPENFORREAD | FDOPENFORWRITE;
     
     // Set the buffer to have 1 block size's worth
-    openFileList[fd].fileBuffer = malloc(blockSize);
+    openFileList[fd].fileBuffer = (char*)malloc(blockSize);
+    
+    // check if memory allocated
+    if (openFileList[fd].fileBuffer == NULL) {
+      printf("Unable to allocate memory space. Program terminated.\n");
+      return -1;
+    }
     
     // Set the pointer to start of the file
     openFileList[fd].pointer = 0;
@@ -1394,7 +1407,7 @@ int myFsOpen (uint64_t fileBlockLocation, int method, uint16_t blockSize, struct
     return fd;
 }
 
-int myFsClose(int fd, struct openFileDirectory *openFileList) {
+int myFsClose(int fd, uint16_t blockSize, struct openFileDirectory *openFileList) {
     // Make sure fd is a valid number
     if ( fd >= FDOPENMAX) {
         return -1;
@@ -1405,6 +1418,23 @@ int myFsClose(int fd, struct openFileDirectory *openFileList) {
         return -1;
     }
     
+    // if is still data in the buffer write before closing it
+    if ((openFileList[fd].flags & FDNEEDSWRITE) == FDNEEDSWRITE) {
+        
+        // Find out which LBA block we are are reffering too
+        uint64_t currentBlock = openFileList[fd].pointer / blockSize;
+        
+        // Get directory entry of the file we are writing to
+        struct directoryEntry *dir = getDirectoryEntryFromBlock(openFileList[fd].directoryEntryLocation, blockSize);
+               
+        // LBAwrite the buffer to the correct index LBA block
+        LBAwrite(openFileList[fd].fileBuffer, 1, dir->indexLocations[currentBlock]);
+               
+        // Clear the buffer
+        memset(openFileList[fd].fileBuffer, 0, blockSize);
+        
+    }
+        
     // Free buffer
     free(openFileList[fd].fileBuffer);
     
@@ -1478,6 +1508,9 @@ uint64_t myFsWriteHelper(int fd, char * src, uint64_t length, uint64_t srcPositi
         // Update pointer location
         openFileList[fd].pointer += totalBytesToWrite;
         
+        // Let us know if data is still in buffer
+        openFileList[fd].flags |= FDNEEDSWRITE;
+        
         // Return new pointer location
         return openFileList[fd].pointer;
     }
@@ -1498,8 +1531,10 @@ uint64_t myFsWriteHelper(int fd, char * src, uint64_t length, uint64_t srcPositi
         LBAwrite(openFileList[fd].fileBuffer, 1, dir->indexLocations[currentBlock]);
         
         // Clear the buffer
-        free(openFileList[fd].fileBuffer);
+        memset(openFileList[fd].fileBuffer, 0, blockSize);
         
+        // Clears the write flag
+        openFileList[fd].flags &= ~FDNEEDSWRITE;
         // Cleanup
         free(dir);
         
@@ -1534,6 +1569,13 @@ uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlrea
     if (currentOffset + totalBytesToRead <= blockSize) {
         // Pull entire LBA block
         void *block = malloc(blockSize);
+        
+        // check if memory allocated
+        if (block == NULL) {
+          printf("Unable to allocate memory space. Program terminated.\n");
+          return -1;
+        }
+        
         LBAread(block, 1, currentBlock);
         
         // Copy what we need from LBA block into src
@@ -1555,6 +1597,12 @@ uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlrea
         
         // Pull entire LBA block
         void *block = malloc(blockSize);
+        
+        // check if memory allocated
+        if (block == NULL) {
+          printf("Unable to allocate memory space. Program terminated.\n");
+          return -1;
+        }
         LBAread(block, 1, currentBlock);
         
         // Copy what we need from LBA block into src
@@ -1607,23 +1655,26 @@ int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize,
     // Open our system file
     int destinationFileFD = myFsOpen(newFileBlockLocation, -1, blockSize, openFileList);
     
-    // create a buffer to store the linux file.
-    char * src = malloc(sizeof(linuxFileSize));
+    // create a buffer to store the linux file. [TO DO] free(src)
+    char * src = (char *)malloc(linuxFileSize);
+    
+    if (src == NULL)
+    {
+        return -1;
+    }
     char ch;
+    int i = 0;
     while( ( ch = fgetc(sourceFile) ) != EOF )
     {
-        for (int i = 0; i < (char)linuxFileSize; i++)
-        {
-            src[i] = ch;
-        }
+        src[i] = ch;
+        i++;
     }
-
+    
     myFsWrite(destinationFileFD, src, linuxFileSize, blockSize, openFileList);
-
 
     free(src);
     fclose(sourceFile);
-    myFsClose(destinationFileFD, openFileList);
+    myFsClose(destinationFileFD, blockSize, openFileList);
     
     return 0;
 }

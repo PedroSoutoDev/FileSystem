@@ -35,16 +35,14 @@
 
 // Group Files
 #include "fsStructures.h"
-#include "fsImplementation.h"
 #include "inputParser.h"
+#include "fsImplementation.h"
 
 // Maximum size of user command input
 #define BUFFERSIZE 128
 
 // Default name for the partition
 #define PARTITION_NAME "Pedro's HDD"
-
-void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFileDirectory *openFileList);
 
 int main (int argc, char *argv[]) {
     // Ensure the correct number of arguments
@@ -95,12 +93,19 @@ int main (int argc, char *argv[]) {
     setVCBCurrentDirectory(getVCBRootDirectory(blockSize), blockSize);
     
     // Create array for all open files
-    struct openFileDirectory * openFileList = malloc((sizeof(openFileList) * FDOPENMAX));
+    struct openFileDirectory * openFileList = (struct openFileDirectory *)malloc(sizeof(struct openFileDirectory) * FDOPENMAX);
     
-    //set all flags to free space
+    // check if memory allocated
+    if (openFileList == NULL) {
+      printf("Unable to allocate memory space. Program terminated.\n");
+      return -1;
+    }
+    
+    //set all flags to free space open
     for (int i = 0; i < FDOPENMAX; i++) {
         openFileList[i].flags = FDOPENFREE;
     }
+    
     // Main loop of program, where we ask for user input then execute t that functionality
     char userInput[BUFFERSIZE];
     char *argList[BUFFERSIZE];

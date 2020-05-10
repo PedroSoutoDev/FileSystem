@@ -22,9 +22,9 @@
 #include <ctype.h>
 
 // Group Files
+#include "fsStructures.h"
 #include "inputParser.h"
 #include "fsImplementation.h"
-#include "fsStructures.h"
 
 void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFileDirectory *openFileList) {
     // Find the corresponding command, and call its proper execute function
@@ -121,7 +121,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFile
         printf("\n\n");
     }
     else if (strcmp(argv[0],"exit") == 0 || strcmp(argv[0],"e") == 0 || strcmp(argv[0],"Exit") == 0 || strcmp(argv[0],"E") == 0) {
-        exitFileSystem(blockSize);
+        exitFileSystem(blockSize, openFileList);
     }
 }
 

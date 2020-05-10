@@ -34,10 +34,11 @@
 
 // Flags for openDirectory Struct
 #define FDOPENINUSE 0x00000001
-#define FDOPENFREE 0x00000002
+#define FDOPENFREE 0x00000002 
 #define FDOPENMAX 50
-#define FDOPENFORWRITE 0x00000010
+#define FDOPENFORWRITE 0x0000001f
 #define FDOPENFORREAD 0x00000020
+#define FDNEEDSWRITE 0x00000004
 
 // Seek method
 #define MYSEEK_CUR 1
@@ -161,6 +162,7 @@ struct directoryEntry {
     uint64_t indexLocations[54];
 };
 
+
 struct openFileDirectory {
     int flags;
     uint64_t pointer;
@@ -168,3 +170,4 @@ struct openFileDirectory {
     uint64_t directoryEntryLocation;
     char * fileBuffer;
 };
+ 
