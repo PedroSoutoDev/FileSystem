@@ -168,7 +168,7 @@ uint64_t getHighestUseableBlock(int16_t blockSize);
 void sampleCreateDirectories(int16_t blockSize);
 
 // Properly closes and exits the file system
-void exitFileSystem(int16_t blockSize);
+void exitFileSystem(int16_t blockSize, struct openFileDirectory * openFileList);
 
 uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize);
 
@@ -178,7 +178,7 @@ uint64_t removeChildFromParent(uint64_t parentDirectoryBlockNumber, uint64_t chi
 
 int myFsOpen (uint64_t fileBlockLocation, int method, uint16_t blockSize, struct openFileDirectory *openFileList);
 
-int myFsClose(int fd, struct openFileDirectory *openFileList);
+int myFsClose(int fd, uint16_t blockSize, struct openFileDirectory *openFileList);
 
 uint64_t myFsSeek(int fd, uint64_t position, int method, struct openFileDirectory *openFileList);
 
