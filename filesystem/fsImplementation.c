@@ -439,7 +439,7 @@ void printDirectoryInfo(char* directoryPath, uint16_t blockSize) {
         printf("File Creation Date: %u\n", dir->dateCreated);
         printf("File Modification Date: %u\n", dir->dateModified);
     }
-    printf("\n\n");
+    printf("\n");
 
     
     // Return to the orignal directory user was at
@@ -1202,7 +1202,7 @@ uint64_t copyFile(char* srcFilePath, char* tarFilePath, uint16_t blockSize) {
     tempFile->blockLocation = dirBlockLocation;
     
     // Since the root has no files/children directories when created, set these pointers to 0
-    memset(tempFile->indexLocations, 0x00, (sizeof(tempFile->indexLocations)/sizeof(tempFile->indexLocations[0])));
+    memset(tempFile->indexLocations, 0, (sizeof(tempFile->indexLocations)));
     int count = 0;
     
     for(int i = 0; srcFile->indexLocations[i] != 0; i++)
@@ -1685,6 +1685,9 @@ int copyToLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, s
     FILE *file;
     if ((file = fopen(destinationPath, "r")))
     {
+        // If there was an error, return to the orignal directory user was at
+        setVCBCurrentDirectory(originalDirectory, blockSize);
+        
         fclose(file);
         printf("Error: A linux file with that name already exitsts.\n\n");
         return -1;
@@ -1693,6 +1696,9 @@ int copyToLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, s
     // Open linux file
     FILE *destinationFile = fopen(destinationPath, "w");
     if (destinationFile == NULL) {
+        // If there was an error, return to the orignal directory user was at
+        setVCBCurrentDirectory(originalDirectory, blockSize);
+        
         printf("Error: Could not create linux file.\n\n");
         return -1;
     }
