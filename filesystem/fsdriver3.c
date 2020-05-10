@@ -58,10 +58,6 @@ int main (int argc, char *argv[]) {
         exit(1);
     }
     
-    // For DEVELOPMENT. Will be removed later. This deletes the text file, thus starting a fresh partition on each run
-    // TODO: Remove before turning in!
-    remove(argv[1]);
-    
     // Start Partition System
     printf("-------------------------------------------------------------------------------\n");
     printf("OPENING FILE SYSTEM...\n");
@@ -82,11 +78,10 @@ int main (int argc, char *argv[]) {
     // If a Volume Control Block has not been created before, create it now
     if (!hasVolumeControlBlock(blockSize)) {
         // This will create the Volume Control Block AND it will also initialize the Free Space Information blocks AND it will create the root directory
-        initializeVolumeControlBlock(volumeSize, PARTITION_NAME, blockSize);
+        initializeVolumeControlBlock(volumeSize, filename, PARTITION_NAME, blockSize);
         
-        // For DEVELOPMENT. Will be removed later. This creates some sample directories, thus starting the file system with some basic directories (Pictures, Videos, Documents, ...etc)
-        // TODO: Remove before turning in!
-        sampleCreateDirectories(blockSize);
+        // This creates some sample directories, thus starting the file system with some basic directories (Pictures, Movies, Documents, ...etc)
+        createDefaultDirectories(blockSize);
     }
     
     // Set the current directory back to the root at launch

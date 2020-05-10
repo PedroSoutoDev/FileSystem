@@ -60,10 +60,10 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFile
         createDirectory(argv[1], getVCBCurrentDirectory(blockSize), blockSize);
     }
     
-    else if (strcmp(argv[0],"movedir") == 0 || strcmp(argv[0],"mvfile") == 0) {
+    else if (strcmp(argv[0],"movedir") == 0 || strcmp(argv[0],"movefile") == 0) {
         moveDirectory(argv[1], argv[2], blockSize);
     }
-    else if (strcmp(argv[0],"makefile") == 0) {
+    else if (strcmp(argv[0],"touch") == 0) {
         // Make sure that file name does not contain improper characters
         for (int i = 0; i < strlen(argv[1]) ; i++) {
             // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
@@ -72,16 +72,7 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFile
                 return;
             }
         }
-        // Make sure that a file extension does not contain improper characters
-        for (int i = 0; i < strlen(argv[2]) ; i++) {
-            // Check if the ASCII value is equal to improper characters. Must only contain characters or numbers
-            // If statement reads as: (number) OR (lowercase letter) OR (uppercase letter)
-            if (! ((argv[2][i] >= 48 && argv[2][i] <= 57) || (argv[2][i] >= 65 && argv[2][i] <= 90) || (argv[2][i] >= 97 && argv[2][i] <= 122)) ) {
-                printf("Invalid File Extension. File Extension May Only Contain Letters/Numbers.\n\n");
-                return;
-            }
-        }
-        createFileDirectory(argv[1], argv[2], 0, getVCBCurrentDirectory(blockSize), blockSize);
+        createFileDirectory(argv[1], "txt", 0, getVCBCurrentDirectory(blockSize), blockSize);
     }
     else if(strcmp(argv[0],"removefile") == 0) {
         removeFile(argv[1], blockSize);
@@ -105,20 +96,22 @@ void executeCommand (int argc, char *argv[], uint64_t blockSize, struct openFile
         }
         setMetaData(argv[1], atoi(argv[2]), blockSize);
     }
-    else if (strcmp(argv[0],"copyfrom") == 0) {
+    else if (strcmp(argv[0],"copyfromlinux") == 0) {
         copyFromLinux(argv[1], argv[2], blockSize, openFileList);
     }
-    else if (strcmp(argv[0],"copyto") == 0) {
+    else if (strcmp(argv[0],"copytolinux") == 0) {
         copyToLinux(argv[1], argv[2], blockSize, openFileList);
     }
-    else if (strcmp(argv[0],"commands") == 0 || strcmp(argv[0],"C") == 0 || strcmp(argv[0],"Commands") == 0 || strcmp(argv[0],"C") == 0) {
+    else if (strcmp(argv[0],"commands") == 0 || strcmp(argv[0],"c") == 0 || strcmp(argv[0],"Commands") == 0 || strcmp(argv[0],"C") == 0) {
         printCommands();
     }
     else if (strcmp(argv[0],"clear") == 0) {
-        //TODO: Clear console
         printf("Clearing console. This May Not Work - Depends On The Terminal You Are Using.\n");
         system("clear");
         printf("\n\n");
+    }
+    else if (strcmp(argv[0],"format") == 0) {
+        formatFileSystem(blockSize);
     }
     else if (strcmp(argv[0],"exit") == 0 || strcmp(argv[0],"e") == 0 || strcmp(argv[0],"Exit") == 0 || strcmp(argv[0],"E") == 0) {
         exitFileSystem(blockSize, openFileList);
@@ -134,19 +127,20 @@ int userInputIsValid (int argc, char *argv[]) {
         "pwd",
         "info",
         "makedir",
-        "makefile",
+        "touch",
         "removefile",
         "copyfile",
         "movefile",
         "movedir",
         "chmod",
-        "copyfrom",
-        "copyto",
+        "copyfromlinux",
+        "copytolinux",
         "clear",
         "commands",
         "c",
         "Commands",
         "C",
+        "format",
         "exit",
         "e",
         "Exit",
@@ -160,20 +154,21 @@ int userInputIsValid (int argc, char *argv[]) {
         1,  // cd
         0,  // pwd
         1,  // info
-        1,  // mkdir
-        2,  // mkfile
-        1,  // rmfile
-        2,  // cpyfile
-        2,  // mvfile
-        2,  // mvdir
+        1,  // makedir
+        1,  // touch
+        1,  // removefile
+        2,  // copyfile
+        2,  // movefile
+        2,  // movedir
         2,  // setdata
-        2,  // copyfrom
-        2,  // copyto
+        2,  // copyfromlinux
+        2,  // copytolinux
         0,  // clear
         0,  // commands
         0,  // c
         0,  // Commands
         0,  // C
+        0,  // format
         0,  // exit
         0,  // e
         0,  // Exit
