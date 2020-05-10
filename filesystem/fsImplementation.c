@@ -1543,7 +1543,7 @@ uint64_t myFsWriteHelper(int fd, char * src, uint64_t length, uint64_t srcPositi
     }
 }
 
-uint64_t myFsRead(int fd, char * src, uint64_t length, uint64_t bytesAlreadyRead, uint16_t blockSize, struct openFileDirectory *openFileList) {
+uint64_t myFsRead(int fd, char * src, uint64_t length, uint16_t blockSize, struct openFileDirectory *openFileList) {
     // Make sure fd is a valid number
     if ( fd >= FDOPENMAX) {
         return -1;
@@ -1554,7 +1554,7 @@ uint64_t myFsRead(int fd, char * src, uint64_t length, uint64_t bytesAlreadyRead
         return -1;
     }
     
-    return myFsWriteHelper(fd, src, length, 0, blockSize, openFileList);
+    return myFsReadHelper(fd, src, length, 0, blockSize, openFileList);
 }
 
 uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlreadyRead, uint16_t blockSize, struct openFileDirectory *openFileList) {
@@ -1563,6 +1563,11 @@ uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlrea
     
     // Find the offset of that block
     uint64_t currentOffset = openFileList[fd].pointer % blockSize;
+    
+    // Find the file block location
+    struct directoryEntry *srcFile = getDirectoryEntryFromBlock(openFileList[fd].directoryEntryLocation, blockSize);
+    
+    
     
     // If we can read what we need, WITHOUT going to the next block, simply read and return
     uint64_t totalBytesToRead = length - bytesAlreadyRead;
@@ -1576,7 +1581,7 @@ uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlrea
           return -1;
         }
         
-        LBAread(block, 1, currentBlock);
+        LBAread(block, 1, srcFile->indexLocations[currentBlock]);
         
         // Copy what we need from LBA block into src
         memcpy((src + bytesAlreadyRead), (block + currentOffset), totalBytesToRead);
@@ -1586,7 +1591,7 @@ uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlrea
         
         // Cleanup
         free (block);
-        
+        free (srcFile);
         // Return new pointer location
         return openFileList[fd].pointer;
     }
@@ -1603,14 +1608,14 @@ uint64_t myFsReadHelper(int fd, char * src, uint64_t length, uint64_t bytesAlrea
           printf("Unable to allocate memory space. Program terminated.\n");
           return -1;
         }
-        LBAread(block, 1, currentBlock);
+        LBAread(block, 1, srcFile->indexLocations[currentBlock]);
         
         // Copy what we need from LBA block into src
         memcpy((src + bytesAlreadyRead), (block + currentOffset), numBytesToRead);
         
         // Cleanup
         free (block);
-        
+        free (srcFile);
         // Update pointer location
         openFileList[fd].pointer += numBytesToRead;
         
@@ -1675,6 +1680,61 @@ int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize,
     free(src);
     fclose(sourceFile);
     myFsClose(destinationFileFD, blockSize, openFileList);
+    
+    return 0;
+}
+
+int copyToLinux(char * sourcePath, char * destinationPath, uint16_t blockSize, struct openFileDirectory *openFileList) {
+    // Check to make sure file does not exist
+    FILE *file;
+    if ((file = fopen(destinationPath, "r")))
+    {
+        fclose(file);
+        printf("Cannot copy file already exist\n");
+        return -1;
+    }
+    
+    // Open linux file
+    FILE *destinationFile = fopen(destinationPath, "w");
+    if (destinationFile == NULL) {
+        printf("Unable To Copy To Linux. Could not create file.\n");
+        return -1;
+    }
+    
+    // Save original directory
+    uint64_t originalDirectory = getVCBCurrentDirectory(blockSize);
+    
+    // CD to directory
+    int returnStat = changeDirectory(sourcePath, 1, blockSize);
+    if (returnStat < 0)
+    {
+        printf("Source Path Not Valid.\n\n");
+        return -1;
+    }
+    
+    // Save file location
+    uint64_t fileLocation = getVCBCurrentDirectory(blockSize);
+    
+    // get information from current file
+    struct directoryEntry *srcFile = getDirectoryEntryFromBlock(fileLocation, blockSize);
+    
+    // Change back to original directory
+    setVCBCurrentDirectory(originalDirectory, blockSize);
+    
+    // Open our system file
+    int sourceFileFD = myFsOpen(fileLocation, -1, blockSize, openFileList);
+    
+    char * src = (char *)malloc(srcFile->fileSize);
+    
+    myFsRead(sourceFileFD, src, srcFile->fileSize, blockSize, openFileList);
+    
+    fwrite(src, openFileList[sourceFileFD].size, 1, destinationFile);
+    
+    
+    free(srcFile);
+    free(src);
+    fclose(destinationFile);
+    myFsClose(sourceFileFD, blockSize, openFileList);
     
     return 0;
 }
