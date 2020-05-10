@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <libgen.h>
 
 // Bierman Files
 #include "fsLow.h"
@@ -29,7 +30,7 @@
 #include "fsImplementation.h"
 
 void printCommands(){
-    printf("-------------------------------------------------------------------------------\n");
+    printf("---------------------------------------------------------------------------------------------\n");
     printf("%-30s","List Directories:"); printf("'ls'\n");
     printf("%-30s","Display Tree:"); printf("'tree'\n");
     printf("%-30s","Change Directories:"); printf("'cd <directory path>'\n");
@@ -45,14 +46,14 @@ void printCommands(){
     printf("%-30s","Move File:"); printf("'movefile <source file path> <destination directory path>'\n");
     printf("%-30s","Set File Permission:"); printf("'chmod <file path> <file permission>'\n");
     printf("\n");
-    printf("%-30s","Copy From Linux Filesystem:"); printf("'copyfromlinux <source file path> <destination file path>'\n");
-    printf("%-30s","Copy To Linux Filesystem:"); printf("'copytolinux <source file path> <destination file path>'\n");
+    printf("%-30s","Copy From Linux Filesystem:"); printf("'copyfromlinux <source file path> <destination directory path>'\n");
+    printf("%-30s","Copy To Linux Filesystem:"); printf("'copytolinux <source file path> <destination directory path>'\n");
     printf("\n");
     printf("%-30s","See Commands Again:"); printf("'commands' or 'c'\n");
     printf("%-30s","Clear Console:"); printf("'clear'\n");
     printf("%-30s","Format Filesystem:"); printf("'format'\n");
     printf("%-30s","Exit:"); printf("'exit' or 'e'\n");
-    printf("-------------------------------------------------------------------------------\n\n");
+    printf("---------------------------------------------------------------------------------------------\n\n");
 }
 
 void initializeVolumeControlBlock(uint64_t volumeSize, char *filename, char *volumeName, uint16_t blockSize) {
@@ -75,7 +76,7 @@ void initializeVolumeControlBlock(uint64_t volumeSize, char *filename, char *vol
     vcb->volumeID = ID;
     
     // Print information about the newly created VCB
-    printf("-------------------------------------------------------------------------------\n");
+    printf("---------------------------------------------------------------------------------------------\n");
     printf("CREATING VOLUME CONTROL BLOCK...\n");
     printf("Volume Name: %s\n", vcb->volumeName);
     printf("Volume ID: %u\n", vcb->volumeID);
@@ -85,7 +86,7 @@ void initializeVolumeControlBlock(uint64_t volumeSize, char *filename, char *vol
     printf("Number of LBA Blocks: %llu\n", vcb->numberOfBlocks);
     printf("Root Directory Block: %llu\n", vcb->rootDirectory);
     printf("VOLUME CONTROL BLOCK CREATED SUCCESSFULLY!\n");
-    printf("-------------------------------------------------------------------------------\n\n");
+    printf("---------------------------------------------------------------------------------------------\n\n");
 
     // Write VCB to LBA block 0
     LBAwrite(vcb, 1, 0);
@@ -149,12 +150,12 @@ void intializeFreeSpaceInformation(uint64_t volumeSize, int16_t blockSize) {
     }
     
     // Print info
-    printf("-------------------------------------------------------------------------------\n");
+    printf("---------------------------------------------------------------------------------------------\n");
     printf("CREATING FREE SPACE INFORMATION...\n");
     printf("Free Space Available: %llu\n", fsi->freeSpace);
     printf("Lowest Block Accessible: %u\n", fsi->lowestBlockAccessible);
     printf("Highest Block Accessible Size: %llu\n", fsi->highestBlockAccessible);
-    printf("-------------------------------------------------------------------------------\n\n");
+    printf("---------------------------------------------------------------------------------------------\n\n");
 
     // Write blocks to file system
     LBAwrite(fsi, 49, 1);
@@ -662,14 +663,14 @@ void createRootDirectory(uint16_t blockSize) {
     memset(tempRootDir->indexLocations, 0x00, (sizeof(tempRootDir->indexLocations)/sizeof(tempRootDir->indexLocations[0])));
     
     // Print info
-    printf("-------------------------------------------------------------------------------\n");
+    printf("---------------------------------------------------------------------------------------------\n");
     printf("CREATING *ROOT* DIRECTORY...\n");
     printf("Directory Name: %s\n", tempRootDir->name);
     printf("Directory Location: %llu\n", tempRootDir->blockLocation);
     printf("Directory Permissions: %hu\n", tempRootDir->permissions);
     printf("Directory Creation Date: %u\n", tempRootDir->dateCreated);
     printf("Child Directory locations: None\n");
-    printf("-------------------------------------------------------------------------------\n\n");
+    printf("---------------------------------------------------------------------------------------------\n\n");
 
     // Write back the block
     LBAwrite(tempRootDir, 1, 50);
@@ -1623,8 +1624,14 @@ int copyFromLinux(char * sourcePath, char * destinationPath, uint16_t blockSize,
     // Change back to original directory
     setVCBCurrentDirectory(originalDirectory, blockSize);
     
+    // Get file name from linux directory (Source: https://linux.die.net/man/3/basename)
+    char* linuxFileName;
+    linuxFileName = basename(strdup(sourcePath));
+    linuxFileName = strtok(linuxFileName, ".");
+    
+    
     // Create a new file
-    uint64_t newFileBlockLocation = createFileDirectory("TESTCOPY", "txt", linuxFileSize, parentLocation, blockSize);
+    uint64_t newFileBlockLocation = createFileDirectory(linuxFileName, "txt", linuxFileSize, parentLocation, blockSize);
     
     // Open our system file
     int destinationFileFD = myFsOpen(newFileBlockLocation, -1, blockSize, openFileList);

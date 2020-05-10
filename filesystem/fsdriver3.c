@@ -59,7 +59,7 @@ int main (int argc, char *argv[]) {
     }
     
     // Start Partition System
-    printf("-------------------------------------------------------------------------------\n");
+    printf("---------------------------------------------------------------------------------------------\n");
     printf("OPENING FILE SYSTEM...\n");
     char * filename = argv[1];
     uint64_t volumeSize = atoll (argv[2]);
@@ -73,7 +73,7 @@ int main (int argc, char *argv[]) {
         printf("ERROR OPENING FILE SYSTEM!\n");
         exit(1);
     }
-    printf("-------------------------------------------------------------------------------\n\n");
+    printf("---------------------------------------------------------------------------------------------\n\n");
 
     // If a Volume Control Block has not been created before, create it now
     if (!hasVolumeControlBlock(blockSize)) {
