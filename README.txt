@@ -1,5 +1,5 @@
-Assignment 3  
-Team: Last Minute  
-Due: 05/11/2020
+Spring 2020 class project, creating a tree-structure file system using a logical array implementation.
+
+
 
 See 'Writeup.pdf' for project details!
